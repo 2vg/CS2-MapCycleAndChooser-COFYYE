@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -92,11 +92,8 @@ namespace MapCycleAndChooser_COFYYE.Utils
             var topMaps = GlobalVariables.MapForVotes
                 .Where(map =>
                 {
-                    var mapValuePercentageExists = mapPercentages.TryGetValue(map.MapValue, out var mapValuePercentage);
-                    var mapDisplayPercentageExists = mapPercentages.TryGetValue(map.MapDisplay, out var mapDisplayPercentage);
-
-                    return (mapValuePercentageExists && mapValuePercentage == maxPercentage) ||
-                           (mapDisplayPercentageExists && mapDisplayPercentage == maxPercentage);
+                    string key = Instance?.Config?.DisplayMapByValue == true ? map.MapValue : map.MapDisplay;
+                    return mapPercentages.TryGetValue(key, out var percentage) && percentage == maxPercentage;
                 })
                 .ToList();
 
@@ -423,11 +420,13 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         {
                             if (Instance?.Config?.DependsOnTheRound == true)
                             {
-                                Server.ExecuteCommand($"mp_maxrounds {(int)timeLeft + Instance?.Config?.ExtendMapTime ?? 5}");
+                                int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
+                                Server.ExecuteCommand($"mp_maxrounds {(int)timeLeft + extendTime}");
                             }
                             else
                             {
-                                Server.ExecuteCommand($"mp_timelimit {Math.Ceiling((float)timeLeft / 60) + Instance?.Config?.ExtendMapTime ?? 5}");
+                                int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
+                                Server.ExecuteCommand($"mp_timelimit {Math.Ceiling((float)timeLeft / 60) + extendTime}");
                             }
                             GlobalVariables.VotedForExtendMap = true;
                             GlobalVariables.VotedForCurrentMap = false;
@@ -526,15 +525,15 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
             var now = DateTime.Now;
             var parsedStart = DateTime.ParseExact(start, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None);
-            var parsedEnd = DateTime.ParseExact(start, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None);
+            var parsedEnd = DateTime.ParseExact(end, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None);
             var startTime = now.Date.Add(parsedStart.TimeOfDay);
             var endTime = now.Date.Add(parsedEnd.TimeOfDay);
-
+        
             // if 'start' - 'end' into the next day
             // example: 23:00 - 05:00
             if (startTime > endTime)
             {
-                endTime.AddDays(1);
+                endTime = endTime.AddDays(1);
             }
 
             return now >= startTime && now <= endTime;

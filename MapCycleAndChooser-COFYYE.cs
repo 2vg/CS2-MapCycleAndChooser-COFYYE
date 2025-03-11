@@ -1,4 +1,4 @@
-﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -110,7 +110,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                     }
                 }
 
-                if(GlobalVariables.MessageIndex + 1 >= 3)
+                if(GlobalVariables.MessageIndex + 1 >= 4)
                 {
                     GlobalVariables.MessageIndex = 0;
                 }
@@ -131,7 +131,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
     public override void Unload(bool hotReload)
     {
-        base.Load(hotReload);
+        base.Unload(hotReload);
 
         DeregisterEventHandler<EventCsWinPanelMatch>(CsWinPanelMatchHandler);
         DeregisterEventHandler<EventRoundStart>(RoundStartHandler);
@@ -160,7 +160,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         if (!PlayerUtils.IsValidPlayer(caller)) return;
 
-        if (!AdminManager.PlayerHasPermissions(caller, "@css/changemap") || !AdminManager.PlayerHasPermissions(caller, "@css/root"))
+        if (!AdminManager.PlayerHasPermissions(caller, "@css/changemap") && !AdminManager.PlayerHasPermissions(caller, "@css/root"))
         {
             caller?.PrintToConsole(Localizer.ForPlayer(caller, "command.no.perm"));
             return;
@@ -191,7 +191,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         if (!PlayerUtils.IsValidPlayer(caller)) return;
 
-        if (!AdminManager.PlayerHasPermissions(caller, "@css/changemap") || !AdminManager.PlayerHasPermissions(caller, "@css/root"))
+        if (!AdminManager.PlayerHasPermissions(caller, "@css/changemap") && !AdminManager.PlayerHasPermissions(caller, "@css/root"))
         {
             caller?.PrintToConsole(Localizer.ForPlayer(caller, "command.no.perm"));
             return;

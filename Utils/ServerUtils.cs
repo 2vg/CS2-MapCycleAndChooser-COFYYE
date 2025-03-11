@@ -1,4 +1,4 @@
-﻿using CounterStrikeSharp.API;
+﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
 using MapCycleAndChooser_COFYYE.Variables;
@@ -49,13 +49,19 @@ namespace MapCycleAndChooser_COFYYE.Utils
         public static CCSGameRules GetGameRules()
         {
             var gameRulesEntities = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules");
+            
+            if (!gameRulesEntities.Any())
+            {
+                throw new InvalidOperationException("No game rules entities found");
+            }
+            
             var gameRules = gameRulesEntities.First().GameRules;
-
+    
             if (gameRules == null)
             {
                 throw new ArgumentNullException(nameof(gameRules));
             }
-
+    
             return gameRules;
         }
 
