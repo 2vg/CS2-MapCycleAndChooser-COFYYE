@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -210,7 +210,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
         }
         
         // Decrease cooldown for all maps by 1
-        public static void DecreaseCooldownForAllMaps()
+        public static async void DecreaseCooldownForAllMaps()
         {
             if (Instance?.Config?.EnableMapCooldown != true)
                 return;
@@ -222,15 +222,21 @@ namespace MapCycleAndChooser_COFYYE.Utils
                     map.MapCurrentCooldown--;
                 }
             }
+            
+            // Save updated cooldowns to file
+            await CooldownManager.SaveCooldownsAsync();
         }
         
         // Reset cooldown for a specific map
-        public static void ResetMapCooldown(Map map)
+        public static async void ResetMapCooldown(Map map)
         {
             if (Instance?.Config?.EnableMapCooldown != true)
                 return;
                 
             map.MapCurrentCooldown = map.MapCooldownCycles;
+            
+            // Save updated cooldown to file
+            await CooldownManager.UpdateMapCooldownAsync(map);
         }
 
         public static void AddPlayerToVotes(string mapValue, string playerSteamId)

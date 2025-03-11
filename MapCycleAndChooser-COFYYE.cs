@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -23,7 +23,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     public static MapCycleAndChooser Instance { get; set; } = new();
     public Config.Config Config { get; set; } = new();
 
-    public void OnConfigParsed(Config.Config config)
+    public async void OnConfigParsed(Config.Config config)
     {
         Instance = this;
 
@@ -39,9 +39,14 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         Logger.LogInformation("Initialized {MapCount} maps.", GlobalVariables.Maps.Count);
         Logger.LogInformation("Initialized {MapCount} cycle maps.", GlobalVariables.CycleMaps.Count);
+        
+        // Load saved cooldowns from file
+        await Utils.CooldownManager.LoadCooldownsAsync();
+        Utils.CooldownManager.ApplyCooldownsToMaps();
+        Logger.LogInformation("Loaded map cooldowns from file.");
     }
 
-    public override void Load(bool hotReload)
+    public override async void Load(bool hotReload)
     {
         base.Load(hotReload);
 
@@ -71,6 +76,14 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         //}
 
         if(!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
+
+        // If this is a hot reload, load cooldowns from file
+        if (hotReload)
+        {
+            await Utils.CooldownManager.LoadCooldownsAsync();
+            Utils.CooldownManager.ApplyCooldownsToMaps();
+            Logger.LogInformation("Loaded map cooldowns from file after hot reload.");
+        }
 
         if(Config?.EnableCommandAdsInChat == true)
         {
@@ -129,8 +142,12 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         GlobalVariables.KitsuneMenu = new KitsuneMenu(this);
     }
 
-    public override void Unload(bool hotReload)
+    public override async void Unload(bool hotReload)
     {
+        // Save cooldowns before unloading
+        await Utils.CooldownManager.SaveCooldownsAsync();
+        Logger.LogInformation("Saved map cooldowns to file on plugin unload.");
+        
         base.Unload(hotReload);
 
         DeregisterEventHandler<EventCsWinPanelMatch>(CsWinPanelMatchHandler);
@@ -459,7 +476,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         GlobalVariables.VotingTimer = null;
     }
 
-    public void OnMapEnd()
+    public async void OnMapEnd()
     {
         if (Config?.VoteMapEnable == true)
         {
@@ -467,6 +484,10 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             GlobalVariables.VotedForExtendMap = false;
             if (!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
         }
+
+        // Save cooldowns before clearing variables
+        await Utils.CooldownManager.SaveCooldownsAsync();
+        Logger.LogInformation("Saved map cooldowns to file on map end.");
 
         GlobalVariables.Votes.Clear();
         GlobalVariables.MapForVotes.Clear();
