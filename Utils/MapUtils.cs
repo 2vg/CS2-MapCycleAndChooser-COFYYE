@@ -1,4 +1,4 @@
-﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -19,20 +19,40 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
             int currentPlayers = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).Count();
 
+            var enableMapCooldown = Instance?.Config?.EnableMapCooldown == true;
+            
             var eligibleMaps = GlobalVariables.Maps
                 .Where(map =>
                     map.MapValue != Server.MapName &&
                     map.MapCanVote &&
                     map.MapMinPlayers <= currentPlayers &&
                     map.MapMaxPlayers >= currentPlayers &&
-                    CheckMapInCycleTime(map)
+                    CheckMapInCycleTime(map) &&
+                    (!enableMapCooldown || map.MapCurrentCooldown <= 0)
                 )
                 .ToList();
 
             if (eligibleMaps.Count == 0)
             {
-                GlobalVariables.MapForVotes.Clear();
-                return;
+                // If no maps are eligible due to cooldowns, include maps regardless of cooldown
+                if (enableMapCooldown)
+                {
+                    eligibleMaps = GlobalVariables.Maps
+                        .Where(map =>
+                            map.MapValue != Server.MapName &&
+                            map.MapCanVote &&
+                            map.MapMinPlayers <= currentPlayers &&
+                            map.MapMaxPlayers >= currentPlayers &&
+                            CheckMapInCycleTime(map)
+                        )
+                        .ToList();
+                }
+
+                if (eligibleMaps.Count == 0)
+                {
+                    GlobalVariables.MapForVotes.Clear();
+                    return;
+                }
             }
 
             if (eligibleMaps.Count <= 5)
@@ -127,11 +147,27 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
         public static void AutoSetNextMap()
         {
+            // Decrease cooldown for all maps
+            DecreaseCooldownForAllMaps();
+            
             if (GlobalVariables.CycleMaps.Count > 0)
             {
+                var enableMapCooldown = Instance?.Config?.EnableMapCooldown == true;
+                
                 if (Instance?.Config?.EnableRandomNextMap == true)
                 {
-                    GlobalVariables.NextMap = GlobalVariables.CycleMaps[new Random().Next(GlobalVariables.CycleMaps.Count)];
+                    // Filter maps with no cooldown if enabled
+                    var eligibleMaps = enableMapCooldown
+                        ? GlobalVariables.CycleMaps.Where(map => map.MapCurrentCooldown <= 0).ToList()
+                        : GlobalVariables.CycleMaps;
+                    
+                    // If no maps are eligible due to cooldowns, use all maps
+                    if (eligibleMaps.Count == 0 && enableMapCooldown)
+                    {
+                        eligibleMaps = GlobalVariables.CycleMaps;
+                    }
+                    
+                    GlobalVariables.NextMap = eligibleMaps[new Random().Next(eligibleMaps.Count)];
                 }
                 else
                 {
@@ -139,16 +175,65 @@ namespace MapCycleAndChooser_COFYYE.Utils
                     {
                         GlobalVariables.NextMapIndex = 0;
                     }
-
+                    
+                    // If cooldown is enabled, find the next map with no cooldown
+                    if (enableMapCooldown)
+                    {
+                        int startIndex = GlobalVariables.NextMapIndex;
+                        bool foundEligibleMap = false;
+                        
+                        // Try to find a map with no cooldown
+                        while (!foundEligibleMap)
+                        {
+                            if (GlobalVariables.CycleMaps[GlobalVariables.NextMapIndex].MapCurrentCooldown <= 0)
+                            {
+                                foundEligibleMap = true;
+                            }
+                            else
+                            {
+                                GlobalVariables.NextMapIndex = (GlobalVariables.NextMapIndex + 1) % GlobalVariables.CycleMaps.Count;
+                                
+                                // If we've checked all maps and none are eligible, use the original next map
+                                if (GlobalVariables.NextMapIndex == startIndex)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
                     GlobalVariables.NextMap = GlobalVariables.CycleMaps[GlobalVariables.NextMapIndex];
-
-                    GlobalVariables.NextMapIndex += 1;
+                    GlobalVariables.NextMapIndex = (GlobalVariables.NextMapIndex + 1) % GlobalVariables.CycleMaps.Count;
                 }
             }
             else
             {
                 GlobalVariables.NextMap = new Map(Server.MapName, Server.MapName, false, "", false, false, 0, 64, "", "");
             }
+        }
+        
+        // Decrease cooldown for all maps by 1
+        public static void DecreaseCooldownForAllMaps()
+        {
+            if (Instance?.Config?.EnableMapCooldown != true)
+                return;
+                
+            foreach (var map in GlobalVariables.Maps)
+            {
+                if (map.MapCurrentCooldown > 0)
+                {
+                    map.MapCurrentCooldown--;
+                }
+            }
+        }
+        
+        // Reset cooldown for a specific map
+        public static void ResetMapCooldown(Map map)
+        {
+            if (Instance?.Config?.EnableMapCooldown != true)
+                return;
+                
+            map.MapCurrentCooldown = map.MapCooldownCycles;
         }
 
         public static void AddPlayerToVotes(string mapValue, string playerSteamId)
@@ -331,6 +416,8 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         if (winningMap != null)
                         {
                             GlobalVariables.NextMap = winningMap;
+                            // Reset cooldown for the winning map
+                            ResetMapCooldown(winningMap);
                         }
                         else if (winningMap == null && type == "extendmap")
                         {
@@ -348,11 +435,21 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         else if (winningMap == null && type == "ignorevote")
                         {
                             GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
+                            // Reset cooldown for the randomly selected map
+                            if (GlobalVariables.NextMap != null)
+                            {
+                                ResetMapCooldown(GlobalVariables.NextMap);
+                            }
                             Instance?.Logger.LogInformation("Winning map is Ignore Vote. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
                         }
                         else
                         {
                             GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
+                            // Reset cooldown for the randomly selected map
+                            if (GlobalVariables.NextMap != null)
+                            {
+                                ResetMapCooldown(GlobalVariables.NextMap);
+                            }
                             Instance?.Logger.LogInformation("Winning map is null. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
                         }
 

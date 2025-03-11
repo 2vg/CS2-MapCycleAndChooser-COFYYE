@@ -1,4 +1,4 @@
-﻿using CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -268,6 +268,13 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         {
             if (GlobalVariables.NextMap != null)
             {
+                // Find current map in the maps list and reset its cooldown
+                var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+                if (currentMap != null && Config?.EnableMapCooldown == true)
+                {
+                    Utils.MapUtils.ResetMapCooldown(currentMap);
+                }
+                
                 GlobalVariables.LastMap = Server.MapName;
                 if (GlobalVariables.NextMap.MapIsWorkshop)
                 {
