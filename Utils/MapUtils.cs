@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -144,9 +144,6 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
         public static void AutoSetNextMap()
         {
-            // Decrease cooldown for all maps
-            DecreaseCooldownForAllMaps();
-            
             if (GlobalVariables.CycleMaps.Count > 0)
             {
                 var enableMapCooldown = Instance?.Config?.EnableMapCooldown == true;
@@ -210,7 +207,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
         }
         
         // Decrease cooldown for all maps by 1
-        public static async void DecreaseCooldownForAllMaps()
+        public static void DecreaseCooldownForAllMaps()
         {
             if (Instance?.Config?.EnableMapCooldown != true)
                 return;
@@ -222,21 +219,15 @@ namespace MapCycleAndChooser_COFYYE.Utils
                     map.MapCurrentCooldown--;
                 }
             }
-            
-            // Save updated cooldowns to file
-            await CooldownManager.SaveCooldownsAsync();
         }
         
         // Reset cooldown for a specific map
-        public static async void ResetMapCooldown(Map map)
+        public static void ResetMapCooldown(Map map)
         {
             if (Instance?.Config?.EnableMapCooldown != true)
                 return;
                 
             map.MapCurrentCooldown = map.MapCooldownCycles;
-            
-            // Save updated cooldown to file
-            await CooldownManager.UpdateMapCooldownAsync(map);
         }
 
         public static void AddPlayerToVotes(string mapValue, string playerSteamId)
@@ -419,8 +410,6 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         if (winningMap != null)
                         {
                             GlobalVariables.NextMap = winningMap;
-                            // Reset cooldown for the winning map
-                            ResetMapCooldown(winningMap);
                         }
                         else if (winningMap == null && type == "extendmap")
                         {
@@ -440,21 +429,11 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         else if (winningMap == null && type == "ignorevote")
                         {
                             GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                            // Reset cooldown for the randomly selected map
-                            if (GlobalVariables.NextMap != null)
-                            {
-                                ResetMapCooldown(GlobalVariables.NextMap);
-                            }
                             Instance?.Logger.LogInformation("Winning map is Ignore Vote. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
                         }
                         else
                         {
                             GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                            // Reset cooldown for the randomly selected map
-                            if (GlobalVariables.NextMap != null)
-                            {
-                                ResetMapCooldown(GlobalVariables.NextMap);
-                            }
                             Instance?.Logger.LogInformation("Winning map is null. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
                         }
 

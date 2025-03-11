@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CounterStrikeSharp.API.Core;
 using MapCycleAndChooser_COFYYE.Classes;
 using Microsoft.Extensions.Logging;
 
@@ -12,9 +13,9 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
     public static class CooldownManager
     {
-        private static readonly string CooldownFilePath = Path.Combine("addons", "configs", "plugins", "MapCycleAndChooser-COFYYE", "cooldowns.json");
+        private static readonly string CooldownFilePath = Path.Combine(Application.RootDirectory, "configs/plugins/MapCycleAndChooser-COFYYE/cooldowns.json");
         private static readonly Dictionary<string, int> MapCooldowns = new();
-        private static readonly SemaphoreSlim FileLock = new(1, 1);
+        private static readonly object FileLock = new();
         private static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
 
         static CooldownManager()
@@ -31,87 +32,83 @@ namespace MapCycleAndChooser_COFYYE.Utils
             }
         }
 
-        public static async Task LoadCooldownsAsync()
+        public static void LoadCooldowns()
         {
-            await FileLock.WaitAsync();
-            try
+            lock (FileLock)
             {
-                if (!File.Exists(CooldownFilePath))
+                try
                 {
-                    Instance?.Logger.LogInformation("Cooldown file not found. Creating a new one.");
-                    await SaveCooldownsAsync();
-                    return;
-                }
+                    if (!File.Exists(CooldownFilePath))
+                    {
+                        Instance?.Logger.LogInformation("Cooldown file not found. Creating a new one.");
+                        SaveCooldowns();
+                        return;
+                    }
 
-                string json = await File.ReadAllTextAsync(CooldownFilePath);
-                if (string.IsNullOrWhiteSpace(json))
+                    string json = File.ReadAllText(CooldownFilePath);
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        Instance?.Logger.LogInformation("Cooldown file is empty. Creating a new one.");
+                        SaveCooldowns();
+                        return;
+                    }
+
+                    List<MapCooldownData>? cooldownData = JsonSerializer.Deserialize<List<MapCooldownData>>(json);
+                    if (cooldownData == null)
+                    {
+                        Instance?.Logger.LogWarning("Failed to deserialize cooldown data. Creating a new file.");
+                        SaveCooldowns();
+                        return;
+                    }
+
+                    MapCooldowns.Clear();
+                    foreach (var data in cooldownData)
+                    {
+                        MapCooldowns[data.MapValue] = data.CurrentCooldown;
+                    }
+
+                    Instance?.Logger.LogInformation("Loaded cooldowns for {Count} maps.", MapCooldowns.Count);
+                }
+                catch (Exception ex)
                 {
-                    Instance?.Logger.LogInformation("Cooldown file is empty. Creating a new one.");
-                    await SaveCooldownsAsync();
-                    return;
+                    Instance?.Logger.LogError(ex, "Error loading cooldown data.");
                 }
-
-                List<MapCooldownData>? cooldownData = JsonSerializer.Deserialize<List<MapCooldownData>>(json);
-                if (cooldownData == null)
-                {
-                    Instance?.Logger.LogWarning("Failed to deserialize cooldown data. Creating a new file.");
-                    await SaveCooldownsAsync();
-                    return;
-                }
-
-                MapCooldowns.Clear();
-                foreach (var data in cooldownData)
-                {
-                    MapCooldowns[data.MapValue] = data.CurrentCooldown;
-                }
-
-                Instance?.Logger.LogInformation("Loaded cooldowns for {Count} maps.", MapCooldowns.Count);
-            }
-            catch (Exception ex)
-            {
-                Instance?.Logger.LogError(ex, "Error loading cooldown data.");
-            }
-            finally
-            {
-                FileLock.Release();
             }
         }
 
-        public static async Task SaveCooldownsAsync()
+        public static void SaveCooldowns()
         {
-            await FileLock.WaitAsync();
-            try
+            lock (FileLock)
             {
-                List<MapCooldownData> cooldownData = new();
-
-                // Get current cooldowns from maps
-                foreach (var map in Variables.GlobalVariables.Maps)
+                try
                 {
-                    cooldownData.Add(new MapCooldownData
+                    List<MapCooldownData> cooldownData = new();
+
+                    // Get current cooldowns from maps
+                    foreach (var map in Variables.GlobalVariables.Maps)
                     {
-                        MapValue = map.MapValue,
-                        CurrentCooldown = map.MapCurrentCooldown
+                        cooldownData.Add(new MapCooldownData
+                        {
+                            MapValue = map.MapValue,
+                            CurrentCooldown = map.MapCurrentCooldown
+                        });
+
+                        // Update in-memory cache
+                        MapCooldowns[map.MapValue] = map.MapCurrentCooldown;
+                    }
+
+                    string json = JsonSerializer.Serialize(cooldownData, new JsonSerializerOptions
+                    {
+                        WriteIndented = true
                     });
 
-                    // Update in-memory cache
-                    MapCooldowns[map.MapValue] = map.MapCurrentCooldown;
+                    File.WriteAllText(CooldownFilePath, json);
+                    Instance?.Logger.LogInformation("Saved cooldowns for {Count} maps.", cooldownData.Count);
                 }
-
-                string json = JsonSerializer.Serialize(cooldownData, new JsonSerializerOptions
+                catch (Exception ex)
                 {
-                    WriteIndented = true
-                });
-
-                await File.WriteAllTextAsync(CooldownFilePath, json);
-                Instance?.Logger.LogInformation("Saved cooldowns for {Count} maps.", cooldownData.Count);
-            }
-            catch (Exception ex)
-            {
-                Instance?.Logger.LogError(ex, "Error saving cooldown data.");
-            }
-            finally
-            {
-                FileLock.Release();
+                    Instance?.Logger.LogError(ex, "Error saving cooldown data.");
+                }
             }
         }
 
@@ -126,10 +123,10 @@ namespace MapCycleAndChooser_COFYYE.Utils
             }
         }
 
-        public static async Task UpdateMapCooldownAsync(Map map)
+        public static void UpdateMapCooldown(Map map)
         {
             MapCooldowns[map.MapValue] = map.MapCurrentCooldown;
-            await SaveCooldownsAsync();
+            SaveCooldowns();
         }
     }
 }
