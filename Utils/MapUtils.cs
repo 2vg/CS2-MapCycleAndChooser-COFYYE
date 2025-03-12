@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -24,7 +24,44 @@ namespace MapCycleAndChooser_COFYYE.Utils
                 Instance?.Logger.LogInformation("Populating maps for voting with {PlayerCount} players", currentPlayers);
 
                 var enableMapCooldown = Instance?.Config?.EnableMapCooldown == true;
+                int voteMapCount = Instance?.Config?.VoteMapCount ?? 5;
                 
+                // First, add nominated maps that meet the criteria
+                if (GlobalVariables.NominatedMaps.Count > 0)
+                {
+                    var eligibleNominations = GlobalVariables.NominatedMaps.Values
+                        .Where(map =>
+                            map.MapValue != Server.MapName &&
+                            map.MapCanVote &&
+                            map.MapMinPlayers <= currentPlayers &&
+                            map.MapMaxPlayers >= currentPlayers &&
+                            CheckMapInCycleTime(map) &&
+                            (!enableMapCooldown || CooldownManager.GetMapCooldown(map.MapValue) <= 0)
+                        )
+                        .ToList();
+
+                    if (eligibleNominations.Count > 0)
+                    {
+                        GlobalVariables.MapForVotes.AddRange(eligibleNominations);
+                        Instance?.Logger.LogInformation("Added {Count} nominated maps to vote list", eligibleNominations.Count);
+                    }
+                }
+                
+                // If we have all slots filled with nominations, return
+                if (GlobalVariables.MapForVotes.Count >= voteMapCount)
+                {
+                    // If we have more nominations than slots, randomly select some
+                    while (GlobalVariables.MapForVotes.Count > voteMapCount)
+                    {
+                        int indexToRemove = random.Next(GlobalVariables.MapForVotes.Count);
+                        GlobalVariables.MapForVotes.RemoveAt(indexToRemove);
+                    }
+                    
+                    Instance?.Logger.LogInformation("Vote list filled with nominations. Total maps: {Count}", GlobalVariables.MapForVotes.Count);
+                    return;
+                }
+                
+                // Fill remaining slots with eligible maps
                 var eligibleMaps = GlobalVariables.Maps
                     .Where(map =>
                         map.MapValue != Server.MapName &&
@@ -32,13 +69,14 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         map.MapMinPlayers <= currentPlayers &&
                         map.MapMaxPlayers >= currentPlayers &&
                         CheckMapInCycleTime(map) &&
-                        (!enableMapCooldown || CooldownManager.GetMapCooldown(map.MapValue) <= 0)
+                        (!enableMapCooldown || CooldownManager.GetMapCooldown(map.MapValue) <= 0) &&
+                        !GlobalVariables.MapForVotes.Any(m => m.MapValue == map.MapValue) // Exclude maps already added from nominations
                     )
                     .ToList();
 
-                Instance?.Logger.LogInformation("Found {Count} eligible maps with cooldown check", eligibleMaps.Count);
+                Instance?.Logger.LogInformation("Found {Count} additional eligible maps with cooldown check", eligibleMaps.Count);
 
-                if (eligibleMaps.Count == 0)
+                if (eligibleMaps.Count == 0 && GlobalVariables.MapForVotes.Count == 0)
                 {
                     // If no maps are eligible due to cooldowns, include maps regardless of cooldown
                     if (enableMapCooldown)
@@ -49,31 +87,32 @@ namespace MapCycleAndChooser_COFYYE.Utils
                                 map.MapCanVote &&
                                 map.MapMinPlayers <= currentPlayers &&
                                 map.MapMaxPlayers >= currentPlayers &&
-                                CheckMapInCycleTime(map)
+                                CheckMapInCycleTime(map) &&
+                                !GlobalVariables.MapForVotes.Any(m => m.MapValue == map.MapValue)
                             )
                             .ToList();
                         
                         Instance?.Logger.LogInformation("Ignoring cooldowns. Found {Count} eligible maps", eligibleMaps.Count);
                     }
 
-                    if (eligibleMaps.Count == 0)
+                    if (eligibleMaps.Count == 0 && GlobalVariables.MapForVotes.Count == 0)
                     {
                         Instance?.Logger.LogWarning("No eligible maps found for voting");
                         return;
                     }
                 }
 
-                int voteMapCount = Instance?.Config?.VoteMapCount ?? 5;
+                int remainingSlots = voteMapCount - GlobalVariables.MapForVotes.Count;
                 
-                if (eligibleMaps.Count <= voteMapCount)
+                if (eligibleMaps.Count <= remainingSlots)
                 {
                     GlobalVariables.MapForVotes.AddRange(eligibleMaps);
                     Instance?.Logger.LogInformation("Added all {Count} eligible maps to vote list", eligibleMaps.Count);
                     return;
                 }
 
-                // Randomly select maps based on config
-                for (int i = 0; i < voteMapCount; i++)
+                // Randomly select maps to fill remaining slots
+                for (int i = 0; i < remainingSlots; i++)
                 {
                     if (eligibleMaps.Count == 0)
                     {

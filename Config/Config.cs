@@ -6,8 +6,6 @@ namespace MapCycleAndChooser_COFYYE.Config
 {
     public class Config : BasePluginConfig
     {
-        // BasePluginConfigのVersionプロパティを使用するため、独自のConfigVersionプロパティを削除
-        // 代わりにVersionプロパティをオーバーライドして使用
         [JsonPropertyName("ConfigVersion")]
         public override int Version { get; set; } = VersionInfo.CurrentConfigVersion; // Config file version
         [JsonPropertyName("rtv_enable")]
@@ -110,6 +108,20 @@ namespace MapCycleAndChooser_COFYYE.Config
         [
             "css_maps",
             "css_mape"
+        ];
+
+        [JsonPropertyName("commands_css_nominate")]
+        public List<string> CommandsCSSNominate { get; init; } =
+        [
+            "css_nominate",
+            "css_nom"
+        ];
+
+        [JsonPropertyName("commands_css_nominations")]
+        public List<string> CommandsCSSNominations { get; init; } =
+        [
+            "css_nominations",
+            "css_noms"
         ];
 
         [JsonPropertyName("commands_nextmap")]

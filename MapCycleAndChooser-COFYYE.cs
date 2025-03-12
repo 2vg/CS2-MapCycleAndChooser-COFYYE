@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -68,6 +68,18 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         AddCommand("css_nextmap", "Set a next map", OnSetNextMap);
         AddCommand("css_maps", "List of all maps", OnMapsList);
+        
+        // Add nominate commands
+        foreach (var cmd in Config?.CommandsCSSNominate ?? ["css_nominate", "css_nom"])
+        {
+            AddCommand(cmd, "Nominate a map for voting", OnNominateMap);
+        }
+        
+        // Add nominations commands
+        foreach (var cmd in Config?.CommandsCSSNominations ?? ["css_nominations", "css_noms"])
+        {
+            AddCommand(cmd, "Show current map nominations", OnShowNominations);
+        }
 
         RegisterEventHandler<EventCsWinPanelMatch>(CsWinPanelMatchHandler);
         RegisterEventHandler<EventRoundStart>(RoundStartHandler);
@@ -225,6 +237,29 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         }
 
         MenuUtils.ShowKitsuneMenuMaps(caller!);
+    }
+
+    public void OnNominateMap(CCSPlayerController? caller, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(caller)) return;
+
+        if (command.ArgString == "")
+        {
+            // Show nominate menu
+            NominateUtils.ShowNominateMenu(caller!);
+            return;
+        }
+
+        // Process nominate command with map name
+        string mapName = command.ArgString.Trim();
+        NominateUtils.ProcessNominateCommand(caller!, mapName);
+    }
+
+    public void OnShowNominations(CCSPlayerController? caller, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(caller)) return;
+
+        NominateUtils.ShowNominations(caller!);
     }
 
     public HookResult PlayerConnectFullHandler(EventPlayerConnectFull @event, GameEventInfo info)
@@ -437,6 +472,46 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             return HookResult.Continue;
         }
 
+        // Handle nominate command
+        if (@event.Text.Trim().StartsWith("!nominate") || @event.Text.Trim().StartsWith("!nom"))
+        {
+            // Get the player controller from the userid
+            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+
+            // `player != null` is supress for CS8602 and CS8064
+            if (PlayerUtils.IsValidPlayer(player) && player != null)
+            {
+                // Check if command has arguments
+                string[] parts = @event.Text.Trim().Split(' ', 2);
+                if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]))
+                {
+                    // Process nominate command with map name
+                    string mapName = parts[1].Trim();
+                    NominateUtils.ProcessNominateCommand(player, mapName);
+                }
+                else
+                {
+                    // Show nominate menu
+                    NominateUtils.ShowNominateMenu(player);
+                }
+            }
+            return HookResult.Continue;
+        }
+
+        // Handle nominations command
+        if (@event.Text.Trim() == "!nominations" || @event.Text.Trim() == "!noms")
+        {
+            // Get the player controller from the userid
+            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+
+            // `player != null` is supress for CS8602 and CS8064
+            if (PlayerUtils.IsValidPlayer(player) && player != null)
+            {
+                NominateUtils.ShowNominations(player);
+            }
+            return HookResult.Continue;
+        }
+
         if (Config?.CommandsNextMap?.Contains(@event.Text.Trim()) == true)
         {
             var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
@@ -564,6 +639,10 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             GlobalVariables.VotedForExtendMap = false;
             if (!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
         }
+
+        // Reset nominations for new map
+        NominateUtils.ResetNominations();
+        Logger.LogInformation("Map nominations have been reset for new map");
 
         // Check if we need to reload map configs (in case they were modified externally)
         Utils.MapConfigManager.LoadMapConfigs();

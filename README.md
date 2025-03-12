@@ -19,27 +19,28 @@ Join and experience this plugin, along with all the other custom plugins I creat
 
 ## Features
 
-- **Next Map Configuration & Display**: Set the next map in the cycle and display it for players.  
-- **Map Voting**: Players can vote for a new map towards the end of the current map.  
-- **Real-time Voting Percentages**: View the percentage of votes for each map in real time.  
-- **Admin Map List**: Admins can access a list of available maps and instantly change the current map.  
-- **Dynamic Map Cycle**: Set which maps are part of the cycle and which ones can be changed from the map list.  
-- **Dynamic Map Cycle Time**: Set whether each map is selected as a cycle based on time.  
-- **Dynamic Map Selection**: Maps are selected based on the current number of players, with options for max and min player thresholds.  
-- **Custom Map Display**: Show custom names instead of map values (e.g., showing "Dust II" instead of "de_dust2").  
-- **Round/Timelimit-Based Map Changes**: Change maps based on the number of rounds or time limits.  
-- **Vote Start Sound**: Play a sound when the voting for a new map begins.  
-- **Ignore Option**: Players can now choose to ignore the current vote.  
-- **Extend Map Option**: Allows players to vote to extend the current map instead of switching to a new one.  
-- **Timeleft Command (`!timeleft`)**: Displays the remaining time before the map changes.  
-- **Current Map Command (`!currentmap`)**: Shows the name of the map currently being played.  
-- **Last Map Command (`!lastmap`)**: Displays the previously played map.  
-- **Map Change Delay**: Configurable delay after the current map ends before the next map loads.  
-- **Vote Trigger Time**: Set how long before the end of the map the voting process should start.  
+- **Next Map Configuration & Display**: Set the next map in the cycle and display it for players.
+- **Map Voting**: Players can vote for a new map towards the end of the current map.
+- **Real-time Voting Percentages**: View the percentage of votes for each map in real time.
+- **Admin Map List**: Admins can access a list of available maps and instantly change the current map.
+- **Dynamic Map Cycle**: Set which maps are part of the cycle and which ones can be changed from the map list.
+- **Dynamic Map Cycle Time**: Set whether each map is selected as a cycle based on time.
+- **Dynamic Map Selection**: Maps are selected based on the current number of players, with options for max and min player thresholds.
+- **Custom Map Display**: Show custom names instead of map values (e.g., showing "Dust II" instead of "de_dust2").
+- **Round/Timelimit-Based Map Changes**: Change maps based on the number of rounds or time limits.
+- **Vote Start Sound**: Play a sound when the voting for a new map begins.
+- **Ignore Option**: Players can now choose to ignore the current vote.
+- **Extend Map Option**: Allows players to vote to extend the current map instead of switching to a new one.
+- **Timeleft Command (`!timeleft`)**: Displays the remaining time before the map changes.
+- **Current Map Command (`!currentmap`)**: Shows the name of the map currently being played.
+- **Last Map Command (`!lastmap`)**: Displays the previously played map.
+- **Map Change Delay**: Configurable delay after the current map ends before the next map loads.
+- **Vote Trigger Time**: Set how long before the end of the map the voting process should start.
 - **Command Aliases**: Each command can have multiple aliases for easier accessibility.
 - **Rock The Vote (`!rtv`)**: Allows players to vote to change the map before the end of the current map.
 - **Map Cooldowns**: Prevents the same maps from being played too frequently by setting a cooldown period in map cycles.
 - **Individual Map Configuration Files**: Each map now has its own configuration file for easier management.
+- **Map Nomination (`!nominate`)**: Allows players to nominate maps to be included in the next map vote.
 
 ## Screenshots
 
@@ -90,35 +91,53 @@ To run this plugin, you need the following dependencies:
      ```json
      "....,3420306144"
      ```
-
 ## Commands and Permissions
 
-1. **`!nextmap`**  
-   - **Description**: Displays the next map in the cycle.  
+1. **`!nextmap`**
+   - **Description**: Displays the next map in the cycle.
    - **Access**: Available to all players.
      
-2. **`!timeleft`**  
-   - **Description**: Displays the remaining time before the current map ends (rounds/minutes).  
-   - **Access**: Available to all players.  
+2. **`!timeleft`**
+   - **Description**: Displays the remaining time before the current map ends (rounds/minutes).
+   - **Access**: Available to all players.
 
-3. **`!currentmap`**  
-   - **Description**: Displays the current map name.  
-   - **Access**: Available to all players.  
+3. **`!currentmap`**
+   - **Description**: Displays the current map name.
+   - **Access**: Available to all players.
 
-4. **`!lastmap`**  
-   - **Description**: Displays the last played map.  
-   - **Access**: Available to all players.  
+4. **`!lastmap`**
+   - **Description**: Displays the last played map.
+   - **Access**: Available to all players.
 
-5. **`!rtv`** or **`!rockthevote`**  
-   - **Description**: Initiates a Rock The Vote to change the current map.  
-   - **Access**: Available to all players.  
+5. **`!rtv`** or **`!rockthevote`**
+   - **Description**: Initiates a Rock The Vote to change the current map.
+   - **Access**: Available to all players.
 
-6. **`css_nextmap`**  
-   - **Description**: Sets the next map in the rotation.  
+6. **`!nominate`** or **`!nom`**
+   - **Description**: Nominates a map to be included in the next map vote.
+   - **Usage**: `!nominate <map>` or just `!nominate` to open a menu.
+   - **Access**: Available to all players.
+
+7. **`!nominations`** or **`!noms`**
+   - **Description**: Shows the current map nominations.
+   - **Access**: Available to all players.
+
+8. **`css_nextmap`**
+   - **Description**: Sets the next map in the rotation.
    - **Access**: Admins only, requires `@css/changemap` permission.
 
-7. **`css_maps`**  
-   - **Description**: Lists all maps and allows instant map changes.  
+9. **`css_maps`**
+   - **Description**: Lists all maps and allows instant map changes.
+   - **Access**: Admins only, requires `@css/changemap` permission.
+
+10. **`css_nominate`** or **`css_nom`**
+    - **Description**: Console command to nominate a map.
+    - **Usage**: `css_nominate <map>` or just `css_nominate` to open a menu.
+    - **Access**: Available to all players.
+
+11. **`css_nominations`** or **`css_noms`**
+    - **Description**: Console command to show current map nominations.
+    - **Access**: Available to all players.
    - **Access**: Admins only, requires `@css/changemap` permission.
 
 ## Configuration Tutorial
@@ -318,14 +337,22 @@ In version 1.2, the configuration system has been significantly improved:
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `!timeleft`.  
 
-33. **`commands_rtv`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `!rtv`.  
+33. **`commands_rtv`**
+    - **Possible Values**: List of strings
+    - **Description**: Defines alias commands for `!rtv`.
 
-34. **`sounds`**  
-   - **Possible Values**: An array of string paths to sound files.  
-   - **Description**: Specifies the sounds that play when map voting begins.  
-     - Add as many sounds as you'd like, and the plugin will play one randomly.  
+34. **`commands_css_nominate`**
+    - **Possible Values**: List of strings
+    - **Description**: Defines alias commands for `css_nominate`.
+
+35. **`commands_css_nominations`**
+    - **Possible Values**: List of strings
+    - **Description**: Defines alias commands for `css_nominations`.
+
+36. **`sounds`**
+   - **Possible Values**: An array of string paths to sound files.
+   - **Description**: Specifies the sounds that play when map voting begins.
+     - Add as many sounds as you'd like, and the plugin will play one randomly.
      - Leave this field empty (`[]`) to disable sounds.
 
 ### Map Configuration Options
@@ -404,15 +431,10 @@ Feel free to submit any suggestions for improvements or new features you'd like 
 
 ## Important Notes
 
-- **Missing Features**: The following features are not yet implemented in this version of the plugin but will be available in future updates:  
-  - `!nominate`  
+- **ScreenMenuAPI Not Included**:
+  The **ScreenMenuAPI** is not included in this version of the plugin due to necessary adjustments required for full compatibility. Additional refinements are needed to ensure seamless functionality with this plugin.
 
-  These features are planned for inclusion, so stay tuned for upcoming versions!  
-
-- **ScreenMenuAPI Not Included**:  
-  The **ScreenMenuAPI** is not included in this version of the plugin due to necessary adjustments required for full compatibility. Additional refinements are needed to ensure seamless functionality with this plugin.  
-
-  Please be patient, and expect an update in the near future that will introduce **ScreenMenuAPI**, along with the `!nominate` command! 🚀
+  Please be patient, and expect an update in the near future that will introduce **ScreenMenuAPI**! 🚀
 
 ## Credits
 

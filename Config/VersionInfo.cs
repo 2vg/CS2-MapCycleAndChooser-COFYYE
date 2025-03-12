@@ -10,7 +10,7 @@ namespace MapCycleAndChooser_COFYYE.Config
         /// <summary>
         /// Current version of the config file format
         /// </summary>
-        public const int CurrentConfigVersion = 2;
+        public const int CurrentConfigVersion = 3;
 
         /// <summary>
         /// Get the appropriate config version for a given plugin version
