@@ -29,6 +29,8 @@ namespace MapCycleAndChooser_COFYYE.Variables
         private static float _mapStartTime = 0;
         private static bool _rtvEnabled = false;
         private static bool _rtvTriggered = false;
+        private static readonly Dictionary<string, Map> _nominatedMaps = []; // Map name to Map object
+        private static readonly Dictionary<string, string> _playerNominations = []; // Player SteamID to nominated map name
 
         public static List<Map> CycleMaps { get { return _cycleMaps; } set { _cycleMaps = value; } }
         public static List<Map> Maps { get { return _maps; } set { _maps = value; } }
@@ -53,5 +55,7 @@ namespace MapCycleAndChooser_COFYYE.Variables
         public static float MapStartTime { get { return _mapStartTime; } set { _mapStartTime = value; } }
         public static bool RtvEnabled { get { return _rtvEnabled; } set { _rtvEnabled = value; } }
         public static bool RtvTriggered { get { return _rtvTriggered; } set { _rtvTriggered = value; } }
+        public static Dictionary<string, Map> NominatedMaps { get { return _nominatedMaps; } }
+        public static Dictionary<string, string> PlayerNominations { get { return _playerNominations; } }
     }
 }

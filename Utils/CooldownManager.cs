@@ -140,9 +140,9 @@ namespace MapCycleAndChooser_COFYYE.Utils
         // Reset the cooldown for a map to its cooldown cycles value
         public static void ResetMapCooldown(Map map)
         {
-            if (map == null || string.IsNullOrEmpty(map.MapValue))
+            if (map == null || string.IsNullOrWhiteSpace(map.MapValue) || map.MapValue == "<empty>" || map.MapValue == "\u003Cempty\u003E")
             {
-                Instance?.Logger.LogWarning("Attempted to reset cooldown for null or invalid map");
+                Instance?.Logger.LogWarning("Attempted to reset cooldown for null, empty, or <empty> map");
                 return;
             }
             

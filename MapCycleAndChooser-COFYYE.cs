@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -27,7 +27,14 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         Instance = this;
 
-        Config = config ?? throw new ArgumentNullException(nameof(config));
+        if (config == null)
+        {
+            throw new ArgumentNullException(nameof(config));
+        }
+
+        Logger.LogInformation("Loaded Config version: {Version}", config.Version);
+        Config = Utils.ConfigMigrator.MigrateConfig(config);
+        Logger.LogInformation("Config version: {Version}", Config.Version);
 
         ServerUtils.CheckAndValidateConfig();
 
@@ -61,6 +68,18 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         AddCommand("css_nextmap", "Set a next map", OnSetNextMap);
         AddCommand("css_maps", "List of all maps", OnMapsList);
+        
+        // Add nominate commands
+        foreach (var cmd in Config?.CommandsCSSNominate ?? ["css_nominate", "css_nom"])
+        {
+            AddCommand(cmd, "Nominate a map for voting", OnNominateMap);
+        }
+        
+        // Add nominations commands
+        foreach (var cmd in Config?.CommandsCSSNominations ?? ["css_nominations", "css_noms"])
+        {
+            AddCommand(cmd, "Show current map nominations", OnShowNominations);
+        }
 
         RegisterEventHandler<EventCsWinPanelMatch>(CsWinPanelMatchHandler);
         RegisterEventHandler<EventRoundStart>(RoundStartHandler);
@@ -218,6 +237,29 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         }
 
         MenuUtils.ShowKitsuneMenuMaps(caller!);
+    }
+
+    public void OnNominateMap(CCSPlayerController? caller, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(caller)) return;
+
+        if (command.ArgString == "")
+        {
+            // Show nominate menu
+            NominateUtils.ShowNominateMenu(caller!);
+            return;
+        }
+
+        // Process nominate command with map name
+        string mapName = command.ArgString.Trim();
+        NominateUtils.ProcessNominateCommand(caller!, mapName);
+    }
+
+    public void OnShowNominations(CCSPlayerController? caller, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(caller)) return;
+
+        NominateUtils.ShowNominations(caller!);
     }
 
     public HookResult PlayerConnectFullHandler(EventPlayerConnectFull @event, GameEventInfo info)
@@ -430,6 +472,46 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             return HookResult.Continue;
         }
 
+        // Handle nominate command
+        if (@event.Text.Trim().StartsWith("!nominate") || @event.Text.Trim().StartsWith("!nom"))
+        {
+            // Get the player controller from the userid
+            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+
+            // `player != null` is supress for CS8602 and CS8064
+            if (PlayerUtils.IsValidPlayer(player) && player != null)
+            {
+                // Check if command has arguments
+                string[] parts = @event.Text.Trim().Split(' ', 2);
+                if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]))
+                {
+                    // Process nominate command with map name
+                    string mapName = parts[1].Trim();
+                    NominateUtils.ProcessNominateCommand(player, mapName);
+                }
+                else
+                {
+                    // Show nominate menu
+                    NominateUtils.ShowNominateMenu(player);
+                }
+            }
+            return HookResult.Continue;
+        }
+
+        // Handle nominations command
+        if (@event.Text.Trim() == "!nominations" || @event.Text.Trim() == "!noms")
+        {
+            // Get the player controller from the userid
+            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+
+            // `player != null` is supress for CS8602 and CS8064
+            if (PlayerUtils.IsValidPlayer(player) && player != null)
+            {
+                NominateUtils.ShowNominations(player);
+            }
+            return HookResult.Continue;
+        }
+
         if (Config?.CommandsNextMap?.Contains(@event.Text.Trim()) == true)
         {
             var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
@@ -558,25 +640,40 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             if (!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
         }
 
+        // Reset nominations for new map
+        NominateUtils.ResetNominations();
+        Logger.LogInformation("Map nominations have been reset for new map");
+
         // Check if we need to reload map configs (in case they were modified externally)
         Utils.MapConfigManager.LoadMapConfigs();
 
-        // Check if the current map has a config file, if not create one with default settings
-        var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
-        if (currentMap == null)
+        // Define currentMap variable outside the if-else block
+        Map? currentMap = null;
+        
+        // Skip empty map names
+        if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>" || Server.MapName == "\u003Cempty\u003E")
         {
-            // Create default config for this map
-            currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
-            
-            // Add to global maps list if not already there
-            if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+            Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
+        }
+        else
+        {
+            // Check if the current map has a config file, if not create one with default settings
+            currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            if (currentMap == null)
             {
-                GlobalVariables.Maps.Add(currentMap);
-                if (currentMap.MapCycleEnabled)
+                // Create default config for this map
+                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
+                
+                // Add to global maps list if not already there
+                if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
                 {
-                    GlobalVariables.CycleMaps.Add(currentMap);
+                    GlobalVariables.Maps.Add(currentMap);
+                    if (currentMap.MapCycleEnabled)
+                    {
+                        GlobalVariables.CycleMaps.Add(currentMap);
+                    }
+                    Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
                 }
-                Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
             }
         }
 
@@ -584,7 +681,8 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         Utils.MapUtils.DecreaseCooldownForAllMaps();
         
         // Reset cooldown for the current map - this ensures we only reset cooldown when a map is actually played
-        if (currentMap != null && Config?.EnableMapCooldown == true)
+        if (currentMap != null && Config?.EnableMapCooldown == true &&
+            !string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
         {
             Utils.MapUtils.ResetMapCooldown(currentMap);
             Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);
