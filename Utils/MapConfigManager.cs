@@ -158,6 +158,13 @@ namespace MapCycleAndChooser_COFYYE.Utils
             {
                 try
                 {
+                    // Skip empty map names
+                    if (string.IsNullOrWhiteSpace(map.MapValue) || map.MapValue == "<empty>")
+                    {
+                        Instance?.Logger.LogWarning("Attempted to save map config for empty or <empty> map name. Skipping.");
+                        return;
+                    }
+                    
                     string mapFilePath = Path.Combine(MapsDirectoryPath, $"{map.MapValue}.json");
                     
                     string json = JsonSerializer.Serialize(map, new JsonSerializerOptions
@@ -195,6 +202,13 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
         public static Map? GetMapConfig(string mapName)
         {
+            // Skip empty map names
+            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>")
+            {
+                Instance?.Logger.LogWarning("Attempted to get map config for empty or <empty> map name. Skipping.");
+                return null;
+            }
+            
             string mapFilePath = Path.Combine(MapsDirectoryPath, $"{mapName}.json");
             
             if (!File.Exists(mapFilePath))
@@ -214,8 +228,15 @@ namespace MapCycleAndChooser_COFYYE.Utils
             }
         }
 
-        public static Map CreateDefaultMapConfig(string mapName)
+        public static Map? CreateDefaultMapConfig(string mapName)
         {
+            // Skip empty map names
+            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>")
+            {
+                Instance?.Logger.LogWarning("Attempted to create map config for empty or <empty> map name. Skipping.");
+                return null;
+            }
+            
             // Use the default map configuration as a template if available
             Map defaultMap;
             
@@ -261,8 +282,15 @@ namespace MapCycleAndChooser_COFYYE.Utils
             return defaultMap;
         }
 
-        public static Map GetOrCreateMapConfig(string mapName)
+        public static Map? GetOrCreateMapConfig(string mapName)
         {
+            // Skip empty map names
+            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>")
+            {
+                Instance?.Logger.LogWarning("Attempted to get or create map config for empty or <empty> map name. Skipping.");
+                return null;
+            }
+            
             Map? mapConfig = GetMapConfig(mapName);
             
             if (mapConfig == null)

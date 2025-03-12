@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -561,22 +561,33 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         // Check if we need to reload map configs (in case they were modified externally)
         Utils.MapConfigManager.LoadMapConfigs();
 
-        // Check if the current map has a config file, if not create one with default settings
-        var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
-        if (currentMap == null)
+        // Define currentMap variable outside the if-else block
+        Map? currentMap = null;
+        
+        // Skip empty map names
+        if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>")
         {
-            // Create default config for this map
-            currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
-            
-            // Add to global maps list if not already there
-            if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+            Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
+        }
+        else
+        {
+            // Check if the current map has a config file, if not create one with default settings
+            currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            if (currentMap == null)
             {
-                GlobalVariables.Maps.Add(currentMap);
-                if (currentMap.MapCycleEnabled)
+                // Create default config for this map
+                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
+                
+                // Add to global maps list if not already there
+                if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
                 {
-                    GlobalVariables.CycleMaps.Add(currentMap);
+                    GlobalVariables.Maps.Add(currentMap);
+                    if (currentMap.MapCycleEnabled)
+                    {
+                        GlobalVariables.CycleMaps.Add(currentMap);
+                    }
+                    Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
                 }
-                Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
             }
         }
 
@@ -584,7 +595,8 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         Utils.MapUtils.DecreaseCooldownForAllMaps();
         
         // Reset cooldown for the current map - this ensures we only reset cooldown when a map is actually played
-        if (currentMap != null && Config?.EnableMapCooldown == true)
+        if (currentMap != null && Config?.EnableMapCooldown == true &&
+            !string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>")
         {
             Utils.MapUtils.ResetMapCooldown(currentMap);
             Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);
