@@ -1,4 +1,4 @@
-﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using MapCycleAndChooser_COFYYE.Classes;
 using System.Text.Json.Serialization;
 
@@ -6,6 +6,28 @@ namespace MapCycleAndChooser_COFYYE.Config
 {
     public class Config : BasePluginConfig
     {
+        [JsonPropertyName("rtv_enable")]
+        public bool RtvEnable { get; init; } = true;
+
+        [JsonPropertyName("rtv_delay")]
+        public int RtvDelay { get; init; } = 60; // seconds after map start
+
+        [JsonPropertyName("rtv_player_percentage")]
+        public int RtvPlayerPercentage { get; init; } = 60; // percentage of players needed to trigger RTV
+
+        [JsonPropertyName("rtv_change_instantly")]
+        public bool RtvChangeInstantly { get; init; } = false; // if true, changes map immediately, otherwise waits for round end
+
+        [JsonPropertyName("rtv_respect_nextmap")]
+        public bool RtvRespectNextmap { get; init; } = true; // if true, uses the already set nextmap when RTV is triggered
+
+        [JsonPropertyName("commands_rtv")]
+        public List<string> CommandsRtv { get; init; } =
+        [
+            "!rtv",
+            "!rockthevote"
+        ];
+
         [JsonPropertyName("vote_map_enable")]
         public bool VoteMapEnable { get; init; } = true;
 
@@ -118,18 +140,10 @@ namespace MapCycleAndChooser_COFYYE.Config
             "sounds/voice/gman_choose2.vsnd_c"
         ];
 
+        [JsonPropertyName("enable_map_cooldown")]
+        public bool EnableMapCooldown { get; init; } = true;
+
         [JsonPropertyName("maps")]
-        public List<Map> Maps { get; init; } =
-        [
-            new Map("de_dust2", "De Dust2", false, "", true, true, 0, 64),
-            new Map("de_mirage", "De Mirage", false, "", true, true, 0, 64),
-            new Map("de_vertigo", "De Vertigo", false, "", true, true, 0, 64),
-            new Map("de_overpass", "De Overpass", false, "", true, true, 0, 64),
-            new Map("de_train", "De Train", false, "", true, true, 0, 64),
-            new Map("de_nuke", "De Nuke", false, "", true, true, 0, 64),
-            new Map("de_anubis", "De Anubis", false, "", true, true, 0, 64),
-            new Map("de_ancient", "De Ancient", false, "", true, true, 0, 64),
-            new Map("de_inferno", "De Inferno", false, "", true, true, 0, 64)
-        ];
+        public List<Map> Maps { get; init; } = [];
     }
 }

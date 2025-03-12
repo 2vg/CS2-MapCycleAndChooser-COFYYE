@@ -39,7 +39,14 @@
   "menu.item.map": "<span color='yellow'>{MAP_NAME}</span>",
   "menu.item.right": "<b color='orange'>►</b>",
   "menu.item.left": "<b color='orange'>◄</b>",
-  "menu.more.items": "<img src='https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/arrow.gif?raw=true' class=''> <img src='https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/arrow.gif?raw=true' class=''> <img src='https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/arrow.gif?raw=true' class=''>",
-  "menu.bottom.vote": "<br /><b color='orange'>[</b><span color='lime'>WS</span> <b color='orange'>-</b> <span color='yellow'>Navigation</span><b color='orange'>] • [</b><span color='lime'>E</span> <b color='orange'>-</b> <span color='yellow'>Select</span><b color='orange'>]</b> <br />",
-  "menu.bottom.maps": "<br /><b color='orange'>[</b><span color='lime'>WS</span> <b color='orange'>-</b> <span color='yellow'>Navigation</span><b color='orange'>] • [</b><span color='lime'>E</span> <b color='orange'>-</b> <span color='yellow'>Select</span><b color='orange'>] <br /> [</b><span color='lime'>R</span> <b color='orange'>-</b> <span color='yellow'>Exit</span><b color='orange'>]</b> <br />"
+
+  "rtv.disabled": "{lightpurple}[MapInfo] {yellow}Rock The Vote is currently {lightred}disabled",
+  "rtv.too.early": "{lightpurple}[MapInfo] {yellow}Rock The Vote is not available yet. Please wait {lime}{TIME} {yellow}seconds",
+  "rtv.already.voted": "{lightpurple}[MapInfo] {yellow}You have already voted to change the map",
+  "rtv.vote.in.progress": "{lightpurple}[MapInfo] {yellow}Map vote is already in progress",
+  "rtv.player.added": "{lightpurple}[MapInfo] {yellow}Player {lime}{PLAYER_NAME} {yellow}wants to change the map ({lime}{CURRENT}/{REQUIRED})",
+  "rtv.started": "{lightpurple}[MapInfo] {yellow}Rock The Vote has been triggered. Vote for the next map!",
+  "rtv.using.nextmap": "{lightpurple}[MapInfo] {yellow}Rock The Vote has been triggered. Next map will be {lime}{MAP_NAME}",
+  "vote.tie.random": "{lightpurple}[MapInfo] {yellow}Vote ended in a tie. Randomly selected: {lime}{MAP_NAME}",
+  "vote.ignore.random": "{lightpurple}[MapInfo] {yellow}Ignore Vote option won. Selecting a random map."
 }

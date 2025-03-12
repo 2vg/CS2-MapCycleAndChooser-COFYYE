@@ -1,5 +1,15 @@
 # MapCycleAndChooser
 
+## 📊 Plugin Statistics  
+
+<p align="center">
+  <img src="https://img.shields.io/github/downloads/cofyye/CS2-MapCycleAndChooser-COFYYE/total" alt="Total Downloads">
+  <img src="https://img.shields.io/github/stars/cofyye/CS2-MapCycleAndChooser-COFYYE" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/last-commit/cofyye/CS2-MapCycleAndChooser-COFYYE" alt="Last Update">
+  <img src="https://img.shields.io/github/issues/cofyye/CS2-MapCycleAndChooser-COFYYE" alt="Open Issues">
+</p>
+
+## 📌 Overview  
 MapCycleAndChooser is a CS2 plugin designed to give server admins complete control over map rotations and player interactions. With this plugin, you can manage map cycles, enable map voting, and customize various settings to optimize gameplay for all players.
 
 ## See it in action
@@ -14,6 +24,7 @@ Join and experience this plugin, along with all the other custom plugins I creat
 - **Real-time Voting Percentages**: View the percentage of votes for each map in real time.  
 - **Admin Map List**: Admins can access a list of available maps and instantly change the current map.  
 - **Dynamic Map Cycle**: Set which maps are part of the cycle and which ones can be changed from the map list.  
+- **Dynamic Map Cycle Time**: Set whether each map is selected as a cycle based on time.  
 - **Dynamic Map Selection**: Maps are selected based on the current number of players, with options for max and min player thresholds.  
 - **Custom Map Display**: Show custom names instead of map values (e.g., showing "Dust II" instead of "de_dust2").  
 - **Round/Timelimit-Based Map Changes**: Change maps based on the number of rounds or time limits.  
@@ -26,6 +37,9 @@ Join and experience this plugin, along with all the other custom plugins I creat
 - **Map Change Delay**: Configurable delay after the current map ends before the next map loads.  
 - **Vote Trigger Time**: Set how long before the end of the map the voting process should start.  
 - **Command Aliases**: Each command can have multiple aliases for easier accessibility.
+- **Rock The Vote (`!rtv`)**: Allows players to vote to change the map before the end of the current map.
+- **Map Cooldowns**: Prevents the same maps from being played too frequently by setting a cooldown period in map cycles.
+- **Individual Map Configuration Files**: Each map now has its own configuration file for easier management.
 
 ## Screenshots
 
@@ -49,7 +63,7 @@ Join and experience this plugin, along with all the other custom plugins I creat
 
    ![Admin Map List](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/maps_menu.png?raw=true)
 
-6. **Support for Local Language Change**: Demonstrates the plugin’s support for language customization.
+6. **Support for Local Language Change**: Demonstrates the plugin's support for language customization.
 
    ![Language Support](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/changed_language.png?raw=true)
 
@@ -95,17 +109,56 @@ To run this plugin, you need the following dependencies:
    - **Description**: Displays the last played map.  
    - **Access**: Available to all players.  
 
-5. **`css_nextmap`**  
+5. **`!rtv`** or **`!rockthevote`**  
+   - **Description**: Initiates a Rock The Vote to change the current map.  
+   - **Access**: Available to all players.  
+
+6. **`css_nextmap`**  
    - **Description**: Sets the next map in the rotation.  
    - **Access**: Admins only, requires `@css/changemap` permission.
 
-6. **`css_maps`**  
+7. **`css_maps`**  
    - **Description**: Lists all maps and allows instant map changes.  
    - **Access**: Admins only, requires `@css/changemap` permission.
 
 ## Configuration Tutorial
 
 Below is a step-by-step guide explaining the available configuration options for **MapCycleAndChooser**. These options allow you to customize how the plugin behaves and interacts with players.
+
+### Configuration File Structure Changes in v1.2
+
+In version 1.2, the configuration system has been significantly improved:
+
+1. **Individual Map Configuration Files**:
+   - Each map now has its own configuration file located in `game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/maps/`.
+   - Files are named after the map (e.g., `de_dust2.json`).
+   - This makes it easier to manage settings for individual maps without editing a large configuration file.
+
+2. **Default Map Template**:
+   - A default map configuration template is stored at `game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/default_map_config.json`.
+   - This template is used when creating configuration files for new maps.
+   - default template:
+     ```jsonc
+      {
+          mapValue: "default",
+          mapDisplay: "Default Map",
+          mapIsWorkshop: false,
+          mapWorkshopId: "",
+          mapCycleEnabled: true,
+          mapCanVote: true,
+          mapMinPlayers: 0,
+          mapMaxPlayers: 64,
+          mapCycleStartTime: "",
+          mapCycleEndTime: "",
+          mapCooldownCycles: 10
+      }
+     ```
+
+3. **Cooldown System**:
+   - Map cooldowns are stored in `game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/cooldowns.json`.
+
+4. **Automatic Migration**:
+   - When upgrading from v1.1, your existing map configurations will be automatically migrated to individual files.
 
 ### General Settings
 
@@ -210,64 +263,138 @@ Below is a step-by-step guide explaining the available configuration options for
       - If `depends_on_round` is `true`, the value is in rounds.  
       - If `depends_on_round` is `false`, the value is in minutes.  
 
-21. **`commands_css_nextmap`**  
+21. **`rtv_enable`**  
+    - **Possible Values**: `true`, `false`  
+    - **Description**: Enables or disables the Rock The Vote (RTV) functionality.  
+      - `true`: RTV is enabled.  
+      - `false`: RTV is disabled.  
+
+22. **`rtv_delay`**  
+    - **Possible Values**: Integer values greater than `0`  
+    - **Description**: Defines the delay (in seconds) after map start before players can use RTV.  
+
+23. **`rtv_player_percentage`**  
+    - **Possible Values**: Integer values between `1` and `100`  
+    - **Description**: Defines the percentage of players needed to trigger an RTV vote.  
+
+24. **`rtv_change_instantly`**  
+    - **Possible Values**: `true`, `false`  
+    - **Description**: Determines if the map changes immediately when RTV is triggered.  
+      - `true`: Map changes immediately.  
+      - `false`: Map changes at the end of the round.  
+
+25. **`rtv_respect_nextmap`**  
+    - **Possible Values**: `true`, `false`  
+    - **Description**: Determines if RTV should use the already set nextmap.  
+      - `true`: Uses the already set nextmap when RTV is triggered.  
+      - `false`: Starts a new vote when RTV is triggered.  
+
+26. **`enable_map_cooldown`**  
+    - **Possible Values**: `true`, `false`  
+    - **Description**: Enables or disables map cooldowns to prevent the same maps from being played too frequently.  
+      - When enabled, maps that were recently played will be excluded from the map cycle and voting until their cooldown expires.
+
+27. **`commands_css_nextmap`**  
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `css_nextmap`.  
 
-22. **`commands_css_maps`**  
+28. **`commands_css_maps`**  
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `css_maps`.  
 
-23. **`commands_nextmap`**  
+29. **`commands_nextmap`**  
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `!nextmap`.  
 
-24. **`commands_lastmap`**  
+30. **`commands_lastmap`**  
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `!lastmap`.  
 
-25. **`commands_currentmap`**  
+31. **`commands_currentmap`**  
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `!currentmap`.  
 
-26. **`commands_timeleft`**  
+32. **`commands_timeleft`**  
     - **Possible Values**: List of strings  
     - **Description**: Defines alias commands for `!timeleft`.  
 
-27. **`sounds`**  
+33. **`commands_rtv`**  
+    - **Possible Values**: List of strings  
+    - **Description**: Defines alias commands for `!rtv`.  
+
+34. **`sounds`**  
    - **Possible Values**: An array of string paths to sound files.  
    - **Description**: Specifies the sounds that play when map voting begins.  
      - Add as many sounds as you'd like, and the plugin will play one randomly.  
      - Leave this field empty (`[]`) to disable sounds.
 
-28. **`maps`**  
-   - **Description**: A list of maps with customizable settings for each map. Each map entry contains the following:  
-     - **`map_value`**: The technical name of the map (e.g., `de_dust2`).  
-     - **`map_display`**: The custom display name for the map (e.g., `Dust II`).  
-     - **`map_is_workshop`**: `true` if the map is from the Steam Workshop; `false` otherwise.  
-     - **`map_workshop_id`**: The Workshop ID of the map (required if `map_is_workshop` is `true`, otherwise set to `""`).  
-     - **`map_cycle_enabled`**: `true` if the map should be included in the map cycle; `false` if it should only appear in the admin map list (`css_maps`).  
-     - **`map_can_vote`**: `true` if the map should appear in the voting system; `false` if it should not.  
-     - **`map_min_players`**: Minimum number of players required for the map to be included in voting.  
-     - **`map_max_players`**: Maximum number of players allowed for the map to be included in voting.
+### Map Configuration Options
+
+Each map now has its own configuration file with the following options:
+
+1. **`map_value`**  
+   - **Description**: The technical name of the map (e.g., `de_dust2`).
+
+2. **`map_display`**  
+   - **Description**: The custom display name for the map (e.g., `Dust II`).
+
+3. **`map_is_workshop`**  
+   - **Possible Values**: `true`, `false`  
+   - **Description**: Indicates if the map is from the Steam Workshop.
+
+4. **`map_workshop_id`**  
+   - **Description**: The Workshop ID of the map (required if `map_is_workshop` is `true`, otherwise set to `""`).
+
+5. **`map_cycle_enabled`**  
+   - **Possible Values**: `true`, `false`  
+   - **Description**: Determines if the map should be included in the map cycle.
+     - `true`: The map will be included in the automatic map rotation.
+     - `false`: The map will only appear in the admin map list (`css_maps`).
+
+6. **`map_can_vote`**  
+   - **Possible Values**: `true`, `false`  
+   - **Description**: Determines if the map should appear in the voting system.
+
+7. **`map_min_players`**  
+   - **Description**: Minimum number of players required for the map to be included in voting.
+
+8. **`map_max_players`**  
+   - **Description**: Maximum number of players allowed for the map to be included in voting.
+
+9. **`map_cycle_start_time`**  
+   - **Format**: `"HH:mm"` (24-hour format)
+   - **Description**: Start time for map cycle. The map will only be available in the cycle between the start and end times.
+   - **Note**: Ignored if both start and end fields are empty.
+
+10. **`map_cycle_end_time`**  
+    - **Format**: `"HH:mm"` (24-hour format)
+    - **Description**: End time for map cycle. The map will only be available in the cycle between the start and end times.
+    - **Note**: Ignored if both start and end fields are empty.
+
+11. **`map_cooldown_cycles`**  
+    - **Possible Values**: Integer values (0 or greater)
+    - **Description**: The number of map cycles that must pass before this map can be played again.
+    - **Example**: If set to 2, the map will be unavailable for 2 map changes after it's played.
+    - **Note**: Only applies when `enable_map_cooldown` is set to `true` in the main configuration.
 
 ### Installation
 
-1. Download the **[MapCycleAndChooser v1.1](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/releases/download/1.1/MapCycleAndChooser-COFYYE-v1.1.zip)** plugin as a `.zip` file.  
+1. Download the **[MapCycleAndChooser v1.2](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/releases/download/1.2/MapCycleAndChooser-COFYYE-v1.2.zip)** plugin as a `.zip` file.  
 2. Upload the contents of the `.zip` file into the following directory on your server:  
    > game/csgo/addons/counterstrikesharp/plugins  
 3. After uploading, change the map or restart your server to activate the plugin.  
-4. The configuration file will be generated at:  
-   > game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/MapCycleAndChooser-COFYYE.json  
-   Adjust all settings in this file as needed.
+4. The configuration files will be generated at:  
+   > game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/  
+   Adjust all settings in these files as needed.
 
 ### Language Support
 The language files are located in the following directory:
 > game/csgo/addons/counterstrikesharp/plugins/MapCycleAndChooser-COFYYE/lang
 
-Currently, there are two language files:
+Currently, there are three language files:
 - `en.json` (English)
 - `sr.json` (Serbian)
+- `pl.json` (Polish)
 
 ## Bug Reports & Suggestions
 
@@ -278,7 +405,6 @@ Feel free to submit any suggestions for improvements or new features you'd like 
 ## Important Notes
 
 - **Missing Features**: The following features are not yet implemented in this version of the plugin but will be available in future updates:  
-  - `!rtv`  
   - `!nominate`  
 
   These features are planned for inclusion, so stay tuned for upcoming versions!  
@@ -286,7 +412,7 @@ Feel free to submit any suggestions for improvements or new features you'd like 
 - **ScreenMenuAPI Not Included**:  
   The **ScreenMenuAPI** is not included in this version of the plugin due to necessary adjustments required for full compatibility. Additional refinements are needed to ensure seamless functionality with this plugin.  
 
-  Please be patient, and expect an update in the near future that will introduce **ScreenMenuAPI**, along with the `!rtv` and `!nominate` commands! 🚀
+  Please be patient, and expect an update in the near future that will introduce **ScreenMenuAPI**, along with the `!nominate` command! 🚀
 
 ## Credits
 
