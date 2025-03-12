@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -63,15 +63,17 @@ namespace MapCycleAndChooser_COFYYE.Utils
                     }
                 }
 
-                if (eligibleMaps.Count <= 5)
+                int voteMapCount = Instance?.Config?.VoteMapCount ?? 5;
+                
+                if (eligibleMaps.Count <= voteMapCount)
                 {
                     GlobalVariables.MapForVotes.AddRange(eligibleMaps);
                     Instance?.Logger.LogInformation("Added all {Count} eligible maps to vote list", eligibleMaps.Count);
                     return;
                 }
 
-                // Randomly select 5 maps
-                for (int i = 0; i < 5; i++)
+                // Randomly select maps based on config
+                for (int i = 0; i < voteMapCount; i++)
                 {
                     if (eligibleMaps.Count == 0)
                     {

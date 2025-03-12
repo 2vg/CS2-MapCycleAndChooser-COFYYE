@@ -1,4 +1,4 @@
-﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using MapCycleAndChooser_COFYYE.Classes;
 using System.Text.Json.Serialization;
 
@@ -94,6 +94,9 @@ namespace MapCycleAndChooser_COFYYE.Config
 
         [JsonPropertyName("display_map_by_value")]
         public bool DisplayMapByValue { get; init; } = true;
+
+        [JsonPropertyName("vote_map_count")]
+        public int VoteMapCount { get; init; } = 5;
 
         [JsonPropertyName("commands_css_nextmap")]
         public List<string> CommandsCSSNextmap { get; init; } =
