@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using MapCycleAndChooser_COFYYE.Classes;
 using System.Text.Json.Serialization;
 
@@ -6,6 +6,10 @@ namespace MapCycleAndChooser_COFYYE.Config
 {
     public class Config : BasePluginConfig
     {
+        // BasePluginConfigのVersionプロパティを使用するため、独自のConfigVersionプロパティを削除
+        // 代わりにVersionプロパティをオーバーライドして使用
+        [JsonPropertyName("ConfigVersion")]
+        public override int Version { get; set; } = VersionInfo.CurrentConfigVersion; // Config file version
         [JsonPropertyName("rtv_enable")]
         public bool RtvEnable { get; init; } = true;
 

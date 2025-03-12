@@ -1,4 +1,4 @@
-﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -27,7 +27,14 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         Instance = this;
 
-        Config = config ?? throw new ArgumentNullException(nameof(config));
+        if (config == null)
+        {
+            throw new ArgumentNullException(nameof(config));
+        }
+
+        Logger.LogInformation("Loaded Config version: {Version}", config.Version);
+        Config = Utils.ConfigMigrator.MigrateConfig(config);
+        Logger.LogInformation("Config version: {Version}", Config.Version);
 
         ServerUtils.CheckAndValidateConfig();
 
@@ -565,7 +572,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         Map? currentMap = null;
         
         // Skip empty map names
-        if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>")
+        if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>" || Server.MapName == "\u003Cempty\u003E")
         {
             Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
         }
@@ -596,7 +603,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         
         // Reset cooldown for the current map - this ensures we only reset cooldown when a map is actually played
         if (currentMap != null && Config?.EnableMapCooldown == true &&
-            !string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>")
+            !string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
         {
             Utils.MapUtils.ResetMapCooldown(currentMap);
             Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);

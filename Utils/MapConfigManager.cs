@@ -159,7 +159,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
                 try
                 {
                     // Skip empty map names
-                    if (string.IsNullOrWhiteSpace(map.MapValue) || map.MapValue == "<empty>")
+                    if (string.IsNullOrWhiteSpace(map.MapValue) || map.MapValue == "<empty>" || map.MapValue == "\u003Cempty\u003E")
                     {
                         Instance?.Logger.LogWarning("Attempted to save map config for empty or <empty> map name. Skipping.");
                         return;
@@ -203,7 +203,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
         public static Map? GetMapConfig(string mapName)
         {
             // Skip empty map names
-            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>")
+            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>" || mapName == "\u003Cempty\u003E")
             {
                 Instance?.Logger.LogWarning("Attempted to get map config for empty or <empty> map name. Skipping.");
                 return null;
@@ -231,7 +231,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
         public static Map? CreateDefaultMapConfig(string mapName)
         {
             // Skip empty map names
-            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>")
+            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>" || mapName == "\u003Cempty\u003E")
             {
                 Instance?.Logger.LogWarning("Attempted to create map config for empty or <empty> map name. Skipping.");
                 return null;
@@ -285,7 +285,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
         public static Map? GetOrCreateMapConfig(string mapName)
         {
             // Skip empty map names
-            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>")
+            if (string.IsNullOrWhiteSpace(mapName) || mapName == "<empty>" || mapName == "\u003Cempty\u003E")
             {
                 Instance?.Logger.LogWarning("Attempted to get or create map config for empty or <empty> map name. Skipping.");
                 return null;
