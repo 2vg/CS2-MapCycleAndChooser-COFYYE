@@ -1,4 +1,4 @@
-﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -31,8 +31,18 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         ServerUtils.CheckAndValidateConfig();
 
-        GlobalVariables.Maps = Config?.Maps ?? [];
-        GlobalVariables.CycleMaps = Config?.Maps?.Where(map => map.MapCycleEnabled == true).ToList() ?? [];
+        // First try to load maps from individual config files
+        Utils.MapConfigManager.LoadMapConfigs();
+
+        // If no maps were loaded from individual files, use the ones from the global config
+        if (GlobalVariables.Maps.Count == 0)
+        {
+            GlobalVariables.Maps = Config?.Maps ?? [];
+            GlobalVariables.CycleMaps = Config?.Maps?.Where(map => map.MapCycleEnabled == true).ToList() ?? [];
+            
+            // Migrate maps from global config to individual files
+            Utils.MapConfigManager.MigrateFromGlobalConfig();
+        }
 
         Server.ExecuteCommand($"mp_match_restart_delay {Config?.DelayToChangeMapInTheEnd ?? 10}");
         Logger.LogInformation("mp_match_restart_delay are set to {RestartDelay}.", Config?.DelayToChangeMapInTheEnd ?? 10);
@@ -40,9 +50,8 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         Logger.LogInformation("Initialized {MapCount} maps.", GlobalVariables.Maps.Count);
         Logger.LogInformation("Initialized {MapCount} cycle maps.", GlobalVariables.CycleMaps.Count);
         
-        // Load saved cooldowns from file - will be loaded on map start
+        // Load saved cooldowns from file
         Utils.CooldownManager.LoadCooldowns();
-        Utils.CooldownManager.ApplyCooldownsToMaps();
         Logger.LogInformation("Loaded map cooldowns from file.");
     }
 
@@ -271,24 +280,75 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         AddTimer((Config?.DelayToChangeMapInTheEnd ?? 10.0f) - 3.0f, () =>
         {
-            if (GlobalVariables.NextMap != null)
+            try
             {
+                // Save cooldowns before map change
+                Utils.CooldownManager.SaveCooldowns();
+                
+                // Clean up resources
+                GlobalVariables.Votes.Clear();
+                GlobalVariables.MapForVotes.Clear();
+                
+                // Kill any active timers
+                GlobalVariables.TimeLeftTimer?.Kill();
+                GlobalVariables.VotingTimer?.Kill();
+                
+                // Set last map
                 GlobalVariables.LastMap = Server.MapName;
-                if (GlobalVariables.NextMap.MapIsWorkshop)
+                
+                if (GlobalVariables.NextMap != null)
                 {
-                    if (string.IsNullOrEmpty(GlobalVariables.NextMap.MapWorkshopId))
+                    // Change to the next map
+                    if (GlobalVariables.NextMap.MapIsWorkshop)
                     {
-                        Server.ExecuteCommand($"ds_workshop_changelevel {GlobalVariables.NextMap.MapValue}");
+                        if (string.IsNullOrEmpty(GlobalVariables.NextMap.MapWorkshopId))
+                        {
+                            Server.ExecuteCommand($"ds_workshop_changelevel {GlobalVariables.NextMap.MapValue}");
+                        }
+                        else
+                        {
+                            Server.ExecuteCommand($"host_workshop_map {GlobalVariables.NextMap.MapWorkshopId}");
+                        }
                     }
                     else
                     {
-                        Server.ExecuteCommand($"host_workshop_map {GlobalVariables.NextMap.MapWorkshopId}");
+                        Server.ExecuteCommand($"changelevel {GlobalVariables.NextMap.MapValue}");
                     }
                 }
                 else
                 {
-                    Server.ExecuteCommand($"changelevel {GlobalVariables.NextMap.MapValue}");
+                    // If NextMap is null, use a random map from the cycle maps
+                    if (GlobalVariables.CycleMaps.Count > 0)
+                    {
+                        var randomMap = GlobalVariables.CycleMaps[new Random().Next(GlobalVariables.CycleMaps.Count)];
+                        Logger.LogInformation("NextMap was null, using random map: {MapName}", randomMap.MapValue);
+                        
+                        if (randomMap.MapIsWorkshop)
+                        {
+                            if (string.IsNullOrEmpty(randomMap.MapWorkshopId))
+                            {
+                                Server.ExecuteCommand($"ds_workshop_changelevel {randomMap.MapValue}");
+                            }
+                            else
+                            {
+                                Server.ExecuteCommand($"host_workshop_map {randomMap.MapWorkshopId}");
+                            }
+                        }
+                        else
+                        {
+                            Server.ExecuteCommand($"changelevel {randomMap.MapValue}");
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogWarning("No next map set and no cycle maps available. Map will not change.");
+                        Server.PrintToChatAll("No next map set and no cycle maps available. Map will not change.");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error during map change");
             }
         }, TimerFlags.STOP_ON_MAPCHANGE);
 
@@ -372,7 +432,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                 }
                 else
                 {
-                    if(Config?.DependsOnTheRound == true)
+                    if(Config?.DependsOnTheRound == true && gameRules != null)
                     {
                         var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
                         var roundLeft = maxRounds - gameRules.TotalRoundsPlayed;
@@ -385,6 +445,10 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                         {
                             player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
                         }
+                    }
+                    else if(Config?.DependsOnTheRound == true && gameRules == null)
+                    {
+                        player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.unavailable"));
                     }
                     else
                     {
@@ -440,11 +504,32 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             if (!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
         }
 
+        // Check if we need to reload map configs (in case they were modified externally)
+        Utils.MapConfigManager.LoadMapConfigs();
+
+        // Check if the current map has a config file, if not create one with default settings
+        var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+        if (currentMap == null)
+        {
+            // Create default config for this map
+            currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
+            
+            // Add to global maps list if not already there
+            if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+            {
+                GlobalVariables.Maps.Add(currentMap);
+                if (currentMap.MapCycleEnabled)
+                {
+                    GlobalVariables.CycleMaps.Add(currentMap);
+                }
+                Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
+            }
+        }
+
         // Decrease cooldown for all maps - this ensures we only decrease cooldowns when a map is actually loaded
         Utils.MapUtils.DecreaseCooldownForAllMaps();
         
         // Reset cooldown for the current map - this ensures we only reset cooldown when a map is actually played
-        var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
         if (currentMap != null && Config?.EnableMapCooldown == true)
         {
             Utils.MapUtils.ResetMapCooldown(currentMap);

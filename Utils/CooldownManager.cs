@@ -83,25 +83,22 @@ namespace MapCycleAndChooser_COFYYE.Utils
                 try
                 {
                     List<MapCooldownData> cooldownData = new();
-
-                    // Get current cooldowns from maps
-                    foreach (var map in Variables.GlobalVariables.Maps)
+    
+                    // Get current cooldowns from in-memory cache
+                    foreach (var mapCooldown in MapCooldowns)
                     {
                         cooldownData.Add(new MapCooldownData
                         {
-                            MapValue = map.MapValue,
-                            CurrentCooldown = map.MapCurrentCooldown
+                            MapValue = mapCooldown.Key,
+                            CurrentCooldown = mapCooldown.Value
                         });
-
-                        // Update in-memory cache
-                        MapCooldowns[map.MapValue] = map.MapCurrentCooldown;
                     }
-
+    
                     string json = JsonSerializer.Serialize(cooldownData, new JsonSerializerOptions
                     {
                         WriteIndented = true
                     });
-
+    
                     File.WriteAllText(CooldownFilePath, json);
                     Instance?.Logger.LogInformation("Saved cooldowns for {Count} maps.", cooldownData.Count);
                 }
@@ -112,20 +109,47 @@ namespace MapCycleAndChooser_COFYYE.Utils
             }
         }
 
-        public static void ApplyCooldownsToMaps()
+        // Get the current cooldown for a map
+        public static int GetMapCooldown(string mapValue)
         {
-            foreach (var map in Variables.GlobalVariables.Maps)
+            if (MapCooldowns.TryGetValue(mapValue, out int cooldown))
             {
-                if (MapCooldowns.TryGetValue(map.MapValue, out int cooldown))
-                {
-                    map.MapCurrentCooldown = cooldown;
-                }
+                return cooldown;
+            }
+            return 0;
+        }
+
+        // Set the current cooldown for a map
+        public static void SetMapCooldown(string mapValue, int cooldown)
+        {
+            MapCooldowns[mapValue] = cooldown;
+        }
+
+        // Decrease the cooldown for a map by 1
+        public static void DecreaseMapCooldown(string mapValue)
+        {
+            if (MapCooldowns.TryGetValue(mapValue, out int cooldown) && cooldown > 0)
+            {
+                MapCooldowns[mapValue] = cooldown - 1;
             }
         }
 
-        public static void UpdateMapCooldown(Map map)
+        // Reset the cooldown for a map to its cooldown cycles value
+        public static void ResetMapCooldown(Map map)
         {
-            MapCooldowns[map.MapValue] = map.MapCurrentCooldown;
+            if (map == null || string.IsNullOrEmpty(map.MapValue))
+            {
+                Instance?.Logger.LogWarning("Attempted to reset cooldown for null or invalid map");
+                return;
+            }
+            
+            MapCooldowns[map.MapValue] = map.MapCooldownCycles;
+        }
+
+        // Update a map's cooldown and save to file
+        public static void UpdateMapCooldown(string mapValue, int cooldown)
+        {
+            MapCooldowns[mapValue] = cooldown;
             SaveCooldowns();
         }
     }
