@@ -305,9 +305,17 @@ namespace MapCycleAndChooser_COFYYE.Utils
             GlobalVariables.VoteStarted = true;
             GlobalVariables.IsVotingInProgress = true;
             
-            // Set a flag to indicate this vote was triggered by RTV
-            // When VotedForExtendMap is true, the extend map option will not be shown in the vote menu
-            GlobalVariables.VotedForExtendMap = true; // This prevents the extend map option from being shown
+            // RTVの目的はマップを変更することなので、マップ延長オプションは表示しない
+            // VotedForExtendMapフラグを使用してマップ延長オプションを非表示にする
+            GlobalVariables.VotedForExtendMap = true;
+            
+            // 投票処理後にフラグをリセットするタイマーを設定
+            Instance.AddTimer(Instance.Config.VoteMapDuration + 1.0f, () => {
+                // 投票が終了した後、フラグをリセットする（次回の通常投票では延長オプションを表示可能にする）
+                if (!GlobalVariables.IsVotingInProgress) {
+                    GlobalVariables.VotedForExtendMap = false;
+                }
+            }, CounterStrikeSharp.API.Modules.Timers.TimerFlags.STOP_ON_MAPCHANGE);
 
             // Show vote menu to all players
             ShowRtvVoteMenu();

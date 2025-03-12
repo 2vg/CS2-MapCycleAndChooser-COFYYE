@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
 using MapCycleAndChooser_COFYYE.Variables;
@@ -10,6 +10,294 @@ namespace MapCycleAndChooser_COFYYE.Utils
     public static class ServerUtils
     {
         public static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+
+        // Helper method to create a new config with updated VoteMapDuration
+        private static Config.Config CreateConfigWithVoteMapDuration(Config.Config currentConfig, int newDuration)
+        {
+            return new Config.Config
+            {
+                // Copy all properties from the current config
+                Version = currentConfig.Version,
+                RtvEnable = currentConfig.RtvEnable,
+                RtvDelay = currentConfig.RtvDelay,
+                RtvPlayerPercentage = currentConfig.RtvPlayerPercentage,
+                RtvChangeInstantly = currentConfig.RtvChangeInstantly,
+                RtvRespectNextmap = currentConfig.RtvRespectNextmap,
+                CommandsRtv = currentConfig.CommandsRtv,
+                VoteMapEnable = currentConfig.VoteMapEnable,
+                VoteMapDuration = newDuration, // Set the new value
+                VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
+                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                EnableRandomNextMap = currentConfig.EnableRandomNextMap,
+                EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
+                EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
+                EnableNextMapCommand = currentConfig.EnableNextMapCommand,
+                EnableLastMapCommand = currentConfig.EnableLastMapCommand,
+                EnableCurrentMapCommand = currentConfig.EnableCurrentMapCommand,
+                EnableTimeLeftCommand = currentConfig.EnableTimeLeftCommand,
+                EnableCommandAdsInChat = currentConfig.EnableCommandAdsInChat,
+                EnableIgnoreVote = currentConfig.EnableIgnoreVote,
+                IgnoreVotePosition = currentConfig.IgnoreVotePosition,
+                EnableExtendMap = currentConfig.EnableExtendMap,
+                ExtendMapTime = currentConfig.ExtendMapTime,
+                ExtendMapPosition = currentConfig.ExtendMapPosition,
+                DelayToChangeMapInTheEnd = currentConfig.DelayToChangeMapInTheEnd,
+                VoteTriggerTimeBeforeMapEnd = currentConfig.VoteTriggerTimeBeforeMapEnd,
+                DisplayMapByValue = currentConfig.DisplayMapByValue,
+                VoteMapCount = currentConfig.VoteMapCount,
+                CommandsCSSNextmap = currentConfig.CommandsCSSNextmap,
+                CommandsCSSMaps = currentConfig.CommandsCSSMaps,
+                CommandsCSSNominate = currentConfig.CommandsCSSNominate,
+                CommandsCSSNominations = currentConfig.CommandsCSSNominations,
+                CommandsNextMap = currentConfig.CommandsNextMap,
+                CommandsLastMap = currentConfig.CommandsLastMap,
+                CommandsCurrentMap = currentConfig.CommandsCurrentMap,
+                CommandsTimeLeft = currentConfig.CommandsTimeLeft,
+                Sounds = currentConfig.Sounds,
+                EnableMapCooldown = currentConfig.EnableMapCooldown,
+                Maps = currentConfig.Maps
+            };
+        }
+
+        // Helper method to create a new config with updated IgnoreVotePosition
+        private static Config.Config CreateConfigWithIgnoreVotePosition(Config.Config currentConfig, string newPosition)
+        {
+            return new Config.Config
+            {
+                // Copy all properties from the current config
+                Version = currentConfig.Version,
+                RtvEnable = currentConfig.RtvEnable,
+                RtvDelay = currentConfig.RtvDelay,
+                RtvPlayerPercentage = currentConfig.RtvPlayerPercentage,
+                RtvChangeInstantly = currentConfig.RtvChangeInstantly,
+                RtvRespectNextmap = currentConfig.RtvRespectNextmap,
+                CommandsRtv = currentConfig.CommandsRtv,
+                VoteMapEnable = currentConfig.VoteMapEnable,
+                VoteMapDuration = currentConfig.VoteMapDuration,
+                VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
+                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                EnableRandomNextMap = currentConfig.EnableRandomNextMap,
+                EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
+                EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
+                EnableNextMapCommand = currentConfig.EnableNextMapCommand,
+                EnableLastMapCommand = currentConfig.EnableLastMapCommand,
+                EnableCurrentMapCommand = currentConfig.EnableCurrentMapCommand,
+                EnableTimeLeftCommand = currentConfig.EnableTimeLeftCommand,
+                EnableCommandAdsInChat = currentConfig.EnableCommandAdsInChat,
+                EnableIgnoreVote = currentConfig.EnableIgnoreVote,
+                IgnoreVotePosition = newPosition, // Set the new value
+                EnableExtendMap = currentConfig.EnableExtendMap,
+                ExtendMapTime = currentConfig.ExtendMapTime,
+                ExtendMapPosition = currentConfig.ExtendMapPosition,
+                DelayToChangeMapInTheEnd = currentConfig.DelayToChangeMapInTheEnd,
+                VoteTriggerTimeBeforeMapEnd = currentConfig.VoteTriggerTimeBeforeMapEnd,
+                DisplayMapByValue = currentConfig.DisplayMapByValue,
+                VoteMapCount = currentConfig.VoteMapCount,
+                CommandsCSSNextmap = currentConfig.CommandsCSSNextmap,
+                CommandsCSSMaps = currentConfig.CommandsCSSMaps,
+                CommandsCSSNominate = currentConfig.CommandsCSSNominate,
+                CommandsCSSNominations = currentConfig.CommandsCSSNominations,
+                CommandsNextMap = currentConfig.CommandsNextMap,
+                CommandsLastMap = currentConfig.CommandsLastMap,
+                CommandsCurrentMap = currentConfig.CommandsCurrentMap,
+                CommandsTimeLeft = currentConfig.CommandsTimeLeft,
+                Sounds = currentConfig.Sounds,
+                EnableMapCooldown = currentConfig.EnableMapCooldown,
+                Maps = currentConfig.Maps
+            };
+        }
+
+        // Helper method to create a new config with updated ExtendMapTime
+        private static Config.Config CreateConfigWithExtendMapTime(Config.Config currentConfig, int newTime)
+        {
+            return new Config.Config
+            {
+                // Copy all properties from the current config
+                Version = currentConfig.Version,
+                RtvEnable = currentConfig.RtvEnable,
+                RtvDelay = currentConfig.RtvDelay,
+                RtvPlayerPercentage = currentConfig.RtvPlayerPercentage,
+                RtvChangeInstantly = currentConfig.RtvChangeInstantly,
+                RtvRespectNextmap = currentConfig.RtvRespectNextmap,
+                CommandsRtv = currentConfig.CommandsRtv,
+                VoteMapEnable = currentConfig.VoteMapEnable,
+                VoteMapDuration = currentConfig.VoteMapDuration,
+                VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
+                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                EnableRandomNextMap = currentConfig.EnableRandomNextMap,
+                EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
+                EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
+                EnableNextMapCommand = currentConfig.EnableNextMapCommand,
+                EnableLastMapCommand = currentConfig.EnableLastMapCommand,
+                EnableCurrentMapCommand = currentConfig.EnableCurrentMapCommand,
+                EnableTimeLeftCommand = currentConfig.EnableTimeLeftCommand,
+                EnableCommandAdsInChat = currentConfig.EnableCommandAdsInChat,
+                EnableIgnoreVote = currentConfig.EnableIgnoreVote,
+                IgnoreVotePosition = currentConfig.IgnoreVotePosition,
+                EnableExtendMap = currentConfig.EnableExtendMap,
+                ExtendMapTime = newTime, // Set the new value
+                ExtendMapPosition = currentConfig.ExtendMapPosition,
+                DelayToChangeMapInTheEnd = currentConfig.DelayToChangeMapInTheEnd,
+                VoteTriggerTimeBeforeMapEnd = currentConfig.VoteTriggerTimeBeforeMapEnd,
+                DisplayMapByValue = currentConfig.DisplayMapByValue,
+                VoteMapCount = currentConfig.VoteMapCount,
+                CommandsCSSNextmap = currentConfig.CommandsCSSNextmap,
+                CommandsCSSMaps = currentConfig.CommandsCSSMaps,
+                CommandsCSSNominate = currentConfig.CommandsCSSNominate,
+                CommandsCSSNominations = currentConfig.CommandsCSSNominations,
+                CommandsNextMap = currentConfig.CommandsNextMap,
+                CommandsLastMap = currentConfig.CommandsLastMap,
+                CommandsCurrentMap = currentConfig.CommandsCurrentMap,
+                CommandsTimeLeft = currentConfig.CommandsTimeLeft,
+                Sounds = currentConfig.Sounds,
+                EnableMapCooldown = currentConfig.EnableMapCooldown,
+                Maps = currentConfig.Maps
+            };
+        }
+
+        // Helper method to create a new config with updated ExtendMapPosition
+        private static Config.Config CreateConfigWithExtendMapPosition(Config.Config currentConfig, string newPosition)
+        {
+            return new Config.Config
+            {
+                // Copy all properties from the current config
+                Version = currentConfig.Version,
+                RtvEnable = currentConfig.RtvEnable,
+                RtvDelay = currentConfig.RtvDelay,
+                RtvPlayerPercentage = currentConfig.RtvPlayerPercentage,
+                RtvChangeInstantly = currentConfig.RtvChangeInstantly,
+                RtvRespectNextmap = currentConfig.RtvRespectNextmap,
+                CommandsRtv = currentConfig.CommandsRtv,
+                VoteMapEnable = currentConfig.VoteMapEnable,
+                VoteMapDuration = currentConfig.VoteMapDuration,
+                VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
+                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                EnableRandomNextMap = currentConfig.EnableRandomNextMap,
+                EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
+                EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
+                EnableNextMapCommand = currentConfig.EnableNextMapCommand,
+                EnableLastMapCommand = currentConfig.EnableLastMapCommand,
+                EnableCurrentMapCommand = currentConfig.EnableCurrentMapCommand,
+                EnableTimeLeftCommand = currentConfig.EnableTimeLeftCommand,
+                EnableCommandAdsInChat = currentConfig.EnableCommandAdsInChat,
+                EnableIgnoreVote = currentConfig.EnableIgnoreVote,
+                IgnoreVotePosition = currentConfig.IgnoreVotePosition,
+                EnableExtendMap = currentConfig.EnableExtendMap,
+                ExtendMapTime = currentConfig.ExtendMapTime,
+                ExtendMapPosition = newPosition, // Set the new value
+                DelayToChangeMapInTheEnd = currentConfig.DelayToChangeMapInTheEnd,
+                VoteTriggerTimeBeforeMapEnd = currentConfig.VoteTriggerTimeBeforeMapEnd,
+                DisplayMapByValue = currentConfig.DisplayMapByValue,
+                VoteMapCount = currentConfig.VoteMapCount,
+                CommandsCSSNextmap = currentConfig.CommandsCSSNextmap,
+                CommandsCSSMaps = currentConfig.CommandsCSSMaps,
+                CommandsCSSNominate = currentConfig.CommandsCSSNominate,
+                CommandsCSSNominations = currentConfig.CommandsCSSNominations,
+                CommandsNextMap = currentConfig.CommandsNextMap,
+                CommandsLastMap = currentConfig.CommandsLastMap,
+                CommandsCurrentMap = currentConfig.CommandsCurrentMap,
+                CommandsTimeLeft = currentConfig.CommandsTimeLeft,
+                Sounds = currentConfig.Sounds,
+                EnableMapCooldown = currentConfig.EnableMapCooldown,
+                Maps = currentConfig.Maps
+            };
+        }
+
+        // Helper method to create a new config with updated DelayToChangeMapInTheEnd
+        private static Config.Config CreateConfigWithDelayToChangeMapInTheEnd(Config.Config currentConfig, int newDelay)
+        {
+            return new Config.Config
+            {
+                // Copy all properties from the current config
+                Version = currentConfig.Version,
+                RtvEnable = currentConfig.RtvEnable,
+                RtvDelay = currentConfig.RtvDelay,
+                RtvPlayerPercentage = currentConfig.RtvPlayerPercentage,
+                RtvChangeInstantly = currentConfig.RtvChangeInstantly,
+                RtvRespectNextmap = currentConfig.RtvRespectNextmap,
+                CommandsRtv = currentConfig.CommandsRtv,
+                VoteMapEnable = currentConfig.VoteMapEnable,
+                VoteMapDuration = currentConfig.VoteMapDuration,
+                VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
+                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                EnableRandomNextMap = currentConfig.EnableRandomNextMap,
+                EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
+                EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
+                EnableNextMapCommand = currentConfig.EnableNextMapCommand,
+                EnableLastMapCommand = currentConfig.EnableLastMapCommand,
+                EnableCurrentMapCommand = currentConfig.EnableCurrentMapCommand,
+                EnableTimeLeftCommand = currentConfig.EnableTimeLeftCommand,
+                EnableCommandAdsInChat = currentConfig.EnableCommandAdsInChat,
+                EnableIgnoreVote = currentConfig.EnableIgnoreVote,
+                IgnoreVotePosition = currentConfig.IgnoreVotePosition,
+                EnableExtendMap = currentConfig.EnableExtendMap,
+                ExtendMapTime = currentConfig.ExtendMapTime,
+                ExtendMapPosition = currentConfig.ExtendMapPosition,
+                DelayToChangeMapInTheEnd = newDelay, // Set the new value
+                VoteTriggerTimeBeforeMapEnd = currentConfig.VoteTriggerTimeBeforeMapEnd,
+                DisplayMapByValue = currentConfig.DisplayMapByValue,
+                VoteMapCount = currentConfig.VoteMapCount,
+                CommandsCSSNextmap = currentConfig.CommandsCSSNextmap,
+                CommandsCSSMaps = currentConfig.CommandsCSSMaps,
+                CommandsCSSNominate = currentConfig.CommandsCSSNominate,
+                CommandsCSSNominations = currentConfig.CommandsCSSNominations,
+                CommandsNextMap = currentConfig.CommandsNextMap,
+                CommandsLastMap = currentConfig.CommandsLastMap,
+                CommandsCurrentMap = currentConfig.CommandsCurrentMap,
+                CommandsTimeLeft = currentConfig.CommandsTimeLeft,
+                Sounds = currentConfig.Sounds,
+                EnableMapCooldown = currentConfig.EnableMapCooldown,
+                Maps = currentConfig.Maps
+            };
+        }
+
+        // Helper method to create a new config with updated VoteTriggerTimeBeforeMapEnd
+        private static Config.Config CreateConfigWithVoteTriggerTimeBeforeMapEnd(Config.Config currentConfig, int newTime)
+        {
+            return new Config.Config
+            {
+                // Copy all properties from the current config
+                Version = currentConfig.Version,
+                RtvEnable = currentConfig.RtvEnable,
+                RtvDelay = currentConfig.RtvDelay,
+                RtvPlayerPercentage = currentConfig.RtvPlayerPercentage,
+                RtvChangeInstantly = currentConfig.RtvChangeInstantly,
+                RtvRespectNextmap = currentConfig.RtvRespectNextmap,
+                CommandsRtv = currentConfig.CommandsRtv,
+                VoteMapEnable = currentConfig.VoteMapEnable,
+                VoteMapDuration = currentConfig.VoteMapDuration,
+                VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
+                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                EnableRandomNextMap = currentConfig.EnableRandomNextMap,
+                EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
+                EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
+                EnableNextMapCommand = currentConfig.EnableNextMapCommand,
+                EnableLastMapCommand = currentConfig.EnableLastMapCommand,
+                EnableCurrentMapCommand = currentConfig.EnableCurrentMapCommand,
+                EnableTimeLeftCommand = currentConfig.EnableTimeLeftCommand,
+                EnableCommandAdsInChat = currentConfig.EnableCommandAdsInChat,
+                EnableIgnoreVote = currentConfig.EnableIgnoreVote,
+                IgnoreVotePosition = currentConfig.IgnoreVotePosition,
+                EnableExtendMap = currentConfig.EnableExtendMap,
+                ExtendMapTime = currentConfig.ExtendMapTime,
+                ExtendMapPosition = currentConfig.ExtendMapPosition,
+                DelayToChangeMapInTheEnd = currentConfig.DelayToChangeMapInTheEnd,
+                VoteTriggerTimeBeforeMapEnd = newTime, // Set the new value
+                DisplayMapByValue = currentConfig.DisplayMapByValue,
+                VoteMapCount = currentConfig.VoteMapCount,
+                CommandsCSSNextmap = currentConfig.CommandsCSSNextmap,
+                CommandsCSSMaps = currentConfig.CommandsCSSMaps,
+                CommandsCSSNominate = currentConfig.CommandsCSSNominate,
+                CommandsCSSNominations = currentConfig.CommandsCSSNominations,
+                CommandsNextMap = currentConfig.CommandsNextMap,
+                CommandsLastMap = currentConfig.CommandsLastMap,
+                CommandsCurrentMap = currentConfig.CommandsCurrentMap,
+                CommandsTimeLeft = currentConfig.CommandsTimeLeft,
+                Sounds = currentConfig.Sounds,
+                EnableMapCooldown = currentConfig.EnableMapCooldown,
+                Maps = currentConfig.Maps
+            };
+        }
 
         public static void InitializeCvars()
         {
@@ -89,7 +377,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (Instance.Config.VoteMapDuration < 0 || Instance.Config.VoteMapDuration > 45)
             {
                 Instance.Logger.LogError("vote_map_duration has bad value. Value must be between 0 and 45. Setting to default value 15.");
-                Instance.Config = new Config.Config { VoteMapDuration = 15 };
+                Instance.Config = CreateConfigWithVoteMapDuration(Instance.Config, 15);
                 isValid = false;
             }
 
@@ -97,7 +385,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (Instance.Config.IgnoreVotePosition != "top" && Instance.Config.IgnoreVotePosition != "bottom")
             {
                 Instance.Logger.LogError("ignore_vote_position has bad value. Value must be top or bottom. Setting to default value 'top'.");
-                Instance.Config = new Config.Config { IgnoreVotePosition = "top" };
+                Instance.Config = CreateConfigWithIgnoreVotePosition(Instance.Config, "top");
                 isValid = false;
             }
 
@@ -105,7 +393,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (Instance.Config.ExtendMapTime < 0)
             {
                 Instance.Logger.LogError("extend_map_time has bad value. Value must be greater than 0. Setting to default value 8.");
-                Instance.Config = new Config.Config { ExtendMapTime = 8 };
+                Instance.Config = CreateConfigWithExtendMapTime(Instance.Config, 8);
                 isValid = false;
             }
 
@@ -113,7 +401,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (Instance.Config.ExtendMapPosition != "top" && Instance.Config.ExtendMapPosition != "bottom")
             {
                 Instance.Logger.LogError("extend_map_position has bad value. Value must be top or bottom. Setting to default value 'bottom'.");
-                Instance.Config = new Config.Config { ExtendMapPosition = "bottom" };
+                Instance.Config = CreateConfigWithExtendMapPosition(Instance.Config, "bottom");
                 isValid = false;
             }
 
@@ -121,7 +409,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (Instance.Config.DelayToChangeMapInTheEnd < 5)
             {
                 Instance.Logger.LogError("delay_to_change_map_in_the_end has bad value. Value must be greater than or equal to 5. Setting to default value 10.");
-                Instance.Config = new Config.Config { DelayToChangeMapInTheEnd = 10 };
+                Instance.Config = CreateConfigWithDelayToChangeMapInTheEnd(Instance.Config, 10);
                 isValid = false;
             }
 
@@ -129,7 +417,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (Instance.Config.VoteTriggerTimeBeforeMapEnd < 2)
             {
                 Instance.Logger.LogError("vote_trigger_time_before_map_end has bad value. Value must be greater than or equal to 2. Setting to default value 3.");
-                Instance.Config = new Config.Config { VoteTriggerTimeBeforeMapEnd = 3 };
+                Instance.Config = CreateConfigWithVoteTriggerTimeBeforeMapEnd(Instance.Config, 3);
                 isValid = false;
             }
 
