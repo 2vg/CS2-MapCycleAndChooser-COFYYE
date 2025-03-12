@@ -38,5 +38,15 @@
   "menu.item.vote": "<span color='yellow'>{MAP_NAME}</span> <b color='orange'>•</b> <b color='lime'>{MAP_PERCENT}%</b>",
   "menu.item.map": "<span color='yellow'>{MAP_NAME}</span>",
   "menu.item.right": "<b color='orange'>►</b>",
-  "menu.item.left": "<b color='orange'>◄</b>"
+  "menu.item.left": "<b color='orange'>◄</b>",
+
+  "rtv.disabled": "{lightpurple}[MapInfo] {yellow}Rock The Vote is currently {lightred}disabled",
+  "rtv.too.early": "{lightpurple}[MapInfo] {yellow}Rock The Vote is not available yet. Please wait {lime}{TIME} {yellow}seconds",
+  "rtv.already.voted": "{lightpurple}[MapInfo] {yellow}You have already voted to change the map",
+  "rtv.vote.in.progress": "{lightpurple}[MapInfo] {yellow}Map vote is already in progress",
+  "rtv.player.added": "{lightpurple}[MapInfo] {yellow}Player {lime}{PLAYER_NAME} {yellow}wants to change the map ({lime}{CURRENT}/{REQUIRED})",
+  "rtv.started": "{lightpurple}[MapInfo] {yellow}Rock The Vote has been triggered. Vote for the next map!",
+  "rtv.using.nextmap": "{lightpurple}[MapInfo] {yellow}Rock The Vote has been triggered. Next map will be {lime}{MAP_NAME}",
+  "vote.tie.random": "{lightpurple}[MapInfo] {yellow}Vote ended in a tie. Randomly selected: {lime}{MAP_NAME}",
+  "vote.ignore.random": "{lightpurple}[MapInfo] {yellow}Ignore Vote option won. Selecting a random map."
 }

@@ -38,6 +38,9 @@ namespace MapCycleAndChooser_COFYYE.Utils
             {
                 try
                 {
+                    // Ensure MapCooldowns is initialized
+                    MapCooldowns.Clear();
+                    
                     if (!File.Exists(CooldownFilePath))
                     {
                         Instance?.Logger.LogInformation("Cooldown file not found. Creating a new one.");

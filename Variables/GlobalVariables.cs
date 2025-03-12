@@ -1,4 +1,4 @@
-﻿using MapCycleAndChooser_COFYYE.Classes;
+﻿﻿﻿﻿using MapCycleAndChooser_COFYYE.Classes;
 using Menu;
 using System.Diagnostics;
 
@@ -25,6 +25,10 @@ namespace MapCycleAndChooser_COFYYE.Variables
         private static CounterStrikeSharp.API.Modules.Timers.Timer? _timeleftTimer = null;
         private static CounterStrikeSharp.API.Modules.Timers.Timer? _votingTimer = null;
         private static KitsuneMenu _kitsuneMenu { get; set; } = null!;
+        private static readonly HashSet<string> _rtvPlayers = [];
+        private static float _mapStartTime = 0;
+        private static bool _rtvEnabled = false;
+        private static bool _rtvTriggered = false;
 
         public static List<Map> CycleMaps { get { return _cycleMaps; } set { _cycleMaps = value; } }
         public static List<Map> Maps { get { return _maps; } set { _maps = value; } }
@@ -45,5 +49,9 @@ namespace MapCycleAndChooser_COFYYE.Variables
         public static CounterStrikeSharp.API.Modules.Timers.Timer? TimeLeftTimer { get { return _timeleftTimer; } set { _timeleftTimer = value; } }
         public static CounterStrikeSharp.API.Modules.Timers.Timer? VotingTimer { get { return _votingTimer; } set { _votingTimer = value; } }
         public static KitsuneMenu KitsuneMenu { get { return _kitsuneMenu; } set { _kitsuneMenu = value; } }
+        public static HashSet<string> RtvPlayers { get { return _rtvPlayers; } }
+        public static float MapStartTime { get { return _mapStartTime; } set { _mapStartTime = value; } }
+        public static bool RtvEnabled { get { return _rtvEnabled; } set { _rtvEnabled = value; } }
+        public static bool RtvTriggered { get { return _rtvTriggered; } set { _rtvTriggered = value; } }
     }
 }

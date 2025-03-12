@@ -69,6 +69,12 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         RegisterEventHandler<EventPlayerConnectFull>(PlayerConnectFullHandler);
         RegisterEventHandler<EventPlayerDisconnect>(PlayerDisconnectHandler);
 
+        if(Config?.RtvEnable == true)
+        {
+            GlobalVariables.MapStartTime = (float)GlobalVariables.Timers.Elapsed.TotalSeconds;
+            GlobalVariables.RtvEnabled = false;
+        }
+
         if(Config?.VoteMapEnable == true)
         {
             GlobalVariables.FreezeTime = ConVar.Find("mp_freezetime")?.GetPrimitiveValue<int>() ?? 5;
@@ -298,22 +304,8 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                 
                 if (GlobalVariables.NextMap != null)
                 {
-                    // Change to the next map
-                    if (GlobalVariables.NextMap.MapIsWorkshop)
-                    {
-                        if (string.IsNullOrEmpty(GlobalVariables.NextMap.MapWorkshopId))
-                        {
-                            Server.ExecuteCommand($"ds_workshop_changelevel {GlobalVariables.NextMap.MapValue}");
-                        }
-                        else
-                        {
-                            Server.ExecuteCommand($"host_workshop_map {GlobalVariables.NextMap.MapWorkshopId}");
-                        }
-                    }
-                    else
-                    {
-                        Server.ExecuteCommand($"changelevel {GlobalVariables.NextMap.MapValue}");
-                    }
+                    // Use the common map change utility method
+                    MapUtils.ChangeMap(GlobalVariables.NextMap);
                 }
                 else
                 {
@@ -323,21 +315,8 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                         var randomMap = GlobalVariables.CycleMaps[new Random().Next(GlobalVariables.CycleMaps.Count)];
                         Logger.LogInformation("NextMap was null, using random map: {MapName}", randomMap.MapValue);
                         
-                        if (randomMap.MapIsWorkshop)
-                        {
-                            if (string.IsNullOrEmpty(randomMap.MapWorkshopId))
-                            {
-                                Server.ExecuteCommand($"ds_workshop_changelevel {randomMap.MapValue}");
-                            }
-                            else
-                            {
-                                Server.ExecuteCommand($"host_workshop_map {randomMap.MapWorkshopId}");
-                            }
-                        }
-                        else
-                        {
-                            Server.ExecuteCommand($"changelevel {randomMap.MapValue}");
-                        }
+                        // Use the common map change utility method
+                        MapUtils.ChangeMap(randomMap);
                     }
                     else
                     {
@@ -371,6 +350,33 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         if (@event == null) return HookResult.Continue;
         
+        // Check if RTV was triggered and we need to change map at round end
+        if (Config?.RtvEnable == true && GlobalVariables.RtvTriggered && !Config.RtvChangeInstantly)
+        {
+            try
+            {
+                if (GlobalVariables.NextMap != null)
+                {
+                    // Use the common map change utility method
+                    MapUtils.ChangeMap(GlobalVariables.NextMap);
+                }
+                else
+                {
+                    Logger.LogWarning("RTV was triggered but NextMap is null. Map will not change.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error during RTV map change in RoundEndHandler");
+            }
+            finally
+            {
+                // Always reset the flag, regardless of success or failure
+                GlobalVariables.RtvTriggered = false;
+            }
+            
+            return HookResult.Continue;
+        }
 
         if(Config?.DependsOnTheRound == true)
         {
@@ -383,6 +389,46 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     public HookResult PlayerChatHandler(EventPlayerChat @event, GameEventInfo info)
     {
         if(@event == null) return HookResult.Continue;
+
+        if (Config?.CommandsRtv?.Contains(@event.Text.Trim()) == true)
+        {
+            // Get the player controller from the userid
+            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+
+            // `player != null` is supress for CS8602 and CS8064
+            if (PlayerUtils.IsValidPlayer(player) && player != null)
+            {
+                if (Config?.RtvEnable != true)
+                {
+                    player.PrintToChat(Localizer.ForPlayer(player, "rtv.disabled"));
+                    return HookResult.Continue;
+                }
+
+                if (RtvUtils.CanPlayerRtv(player))
+                {
+                    RtvUtils.AddPlayerRtv(player);
+                }
+                else
+                {
+                    // Check why player can't RTV
+                    float currentTime = (float)GlobalVariables.Timers.Elapsed.TotalSeconds;
+                    if (currentTime - GlobalVariables.MapStartTime < Config.RtvDelay)
+                    {
+                        int remainingTime = (int)(Config.RtvDelay - (currentTime - GlobalVariables.MapStartTime));
+                        player.PrintToChat(Localizer.ForPlayer(player, "rtv.too.early").Replace("{TIME}", remainingTime.ToString()));
+                    }
+                    else if (GlobalVariables.RtvPlayers.Contains(player.SteamID.ToString()))
+                    {
+                        player.PrintToChat(Localizer.ForPlayer(player, "rtv.already.voted"));
+                    }
+                    else if (GlobalVariables.IsVotingInProgress || GlobalVariables.VoteStarted)
+                    {
+                        player.PrintToChat(Localizer.ForPlayer(player, "rtv.vote.in.progress"));
+                    }
+                }
+            }
+            return HookResult.Continue;
+        }
 
         if (Config?.CommandsNextMap?.Contains(@event.Text.Trim()) == true)
         {
@@ -497,6 +543,14 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
     public void OnMapStart(string mapName)
     {
+        if (Config?.RtvEnable == true)
+        {
+            GlobalVariables.MapStartTime = (float)GlobalVariables.Timers.Elapsed.TotalSeconds;
+            GlobalVariables.RtvTriggered = false;
+            RtvUtils.ResetRtv();
+            Logger.LogInformation("RTV has been reset for new map");
+        }
+
         if (Config?.VoteMapEnable == true)
         {
             GlobalVariables.VotedForCurrentMap = false;
@@ -559,6 +613,13 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
     public void OnMapEnd()
     {
+        if (Config?.RtvEnable == true)
+        {
+            GlobalVariables.RtvTriggered = false;
+            RtvUtils.ResetRtv();
+            Logger.LogInformation("RTV has been reset for map end");
+        }
+
         if (Config?.VoteMapEnable == true)
         {
             GlobalVariables.VotedForCurrentMap = false;

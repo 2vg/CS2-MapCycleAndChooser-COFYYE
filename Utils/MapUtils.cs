@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -449,6 +449,160 @@ namespace MapCycleAndChooser_COFYYE.Utils
             }
         }
 
+        /// <summary>
+        /// Processes the vote results and takes appropriate actions based on the winning map or option.
+        /// </summary>
+        /// <param name="timeLeft">Current time left in the map</param>
+        private static void ProcessVoteResults(float timeLeft)
+        {
+            try
+            {
+                var (winningMap, type) = GetWinningMap();
+
+                if (winningMap != null)
+                {
+                    GlobalVariables.NextMap = winningMap;
+                    Instance?.Logger.LogInformation("Vote completed. Next map: {MapName}", winningMap.MapValue);
+                }
+                else if (winningMap == null && type == "extendmap")
+                {
+                    HandleExtendMapVote(timeLeft);
+                }
+                else if (winningMap == null && type == "ignorevote")
+                {
+                    GlobalVariables.NextMap = GetRandomNextMapByPlayers();
+                    Instance?.Logger.LogInformation("Winning map is Ignore Vote. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
+                }
+                else if (winningMap == null && type == "tie")
+                {
+                    // This case is handled in GetWinningMap
+                    Instance?.Logger.LogInformation("Vote ended in a tie. Random map was selected.");
+                }
+                else if (winningMap == null && type == "error")
+                {
+                    GlobalVariables.NextMap = GetRandomNextMapByPlayers();
+                    Instance?.Logger.LogWarning("Error during vote processing. Selecting random map: {MapName}", GlobalVariables.NextMap?.MapValue);
+                }
+                else
+                {
+                    GlobalVariables.NextMap = GetRandomNextMapByPlayers();
+                    Instance?.Logger.LogInformation("No winning map determined. Selecting random map: {MapName}", GlobalVariables.NextMap?.MapValue);
+                }
+
+                // Clean up
+                GlobalVariables.Votes.Clear();
+                GlobalVariables.MapForVotes.Clear();
+                GlobalVariables.VoteStarted = false;
+                Instance?.AddTimer(1.0f, () => GlobalVariables.IsVotingInProgress = false);
+
+                if (type != "extendmap")
+                {
+                    GlobalVariables.VotedForCurrentMap = true;
+                }
+
+                NotifyPlayersAboutVoteResults(type);
+            }
+            catch (Exception ex)
+            {
+                Instance?.Logger.LogError(ex, "Error processing vote results");
+                
+                // Ensure we clean up even if there's an error
+                GlobalVariables.Votes.Clear();
+                GlobalVariables.MapForVotes.Clear();
+                GlobalVariables.VoteStarted = false;
+                GlobalVariables.IsVotingInProgress = false;
+                GlobalVariables.VotedForCurrentMap = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles the extend map vote option by updating the appropriate server settings.
+        /// </summary>
+        /// <param name="timeLeft">Current time left in the map</param>
+        private static void HandleExtendMapVote(float timeLeft)
+        {
+            if (Instance?.Config?.DependsOnTheRound == true)
+            {
+                int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
+                Server.ExecuteCommand($"mp_maxrounds {(int)timeLeft + extendTime}");
+                Instance?.Logger.LogInformation("Vote to extend map. Setting mp_maxrounds to {Rounds}", (int)timeLeft + extendTime);
+            }
+            else
+            {
+                int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
+                Server.ExecuteCommand($"mp_timelimit {Math.Ceiling((float)timeLeft / 60) + extendTime}");
+                Instance?.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", Math.Ceiling((float)timeLeft / 60) + extendTime);
+            }
+            GlobalVariables.VotedForExtendMap = true;
+            GlobalVariables.VotedForCurrentMap = false;
+        }
+
+        /// <summary>
+        /// Notifies all players about the vote results.
+        /// </summary>
+        /// <param name="voteType">The type of vote result</param>
+        private static void NotifyPlayersAboutVoteResults(string voteType)
+        {
+            var activePlayers = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
+            foreach (var player in activePlayers)
+            {
+                try
+                {
+                    if (voteType == "extendmap")
+                    {
+                        player.PrintToChat(Instance?.Localizer.ForPlayer(player, "vote.finished.extend.map.round").Replace("{EXTENDED_TIME}", Instance?.Config?.ExtendMapTime.ToString()) ?? "");
+                    }
+                    else
+                    {
+                        player.PrintToChat(Instance?.Localizer.ForPlayer(player, "vote.finished").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue) ?? "");
+                    }
+
+                    GlobalVariables.KitsuneMenu?.ClearMenus(player);
+                }
+                catch (Exception ex)
+                {
+                    Instance?.Logger.LogError(ex, "Error notifying player {PlayerName} about vote results", player.PlayerName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows the vote menu to all players and plays a sound if configured.
+        /// </summary>
+        private static void ShowVoteMenuToPlayers()
+        {
+            var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
+            Instance?.Logger.LogInformation("Starting map vote with {Count} players", players.Count);
+
+            string? soundToPlay = "";
+            if (Instance?.Config?.Sounds.Count > 0)
+            {
+                soundToPlay = Instance?.Config.Sounds[new Random().Next(Instance?.Config?.Sounds.Count ?? 1)];
+            }
+
+            foreach (var player in players)
+            {
+                try
+                {
+                    player.PrintToChat(Instance?.Localizer.ForPlayer(player, "vote.started") ?? "");
+
+                    if (!string.IsNullOrEmpty(soundToPlay))
+                    {
+                        player.ExecuteClientCommand($"play {soundToPlay}");
+                    }
+
+                    MenuUtils.ShowKitsuneMenuVoteMaps(player);
+                }
+                catch (Exception ex)
+                {
+                    Instance?.Logger.LogError(ex, "Error showing vote menu to player {PlayerName}", player.PlayerName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if it's time to start a map vote and starts it if conditions are met.
+        /// </summary>
         public static HookResult CheckAndStartMapVoting()
         {
             try
@@ -491,132 +645,12 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         GlobalVariables.VoteStarted = true;
                         GlobalVariables.IsVotingInProgress = true;
 
-                        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-                        Instance?.Logger.LogInformation("Starting map vote with {Count} players", players.Count);
-
-                        string? soundToPlay = "";
-                        if (Instance?.Config?.Sounds.Count > 0)
-                        {
-                            soundToPlay = Instance?.Config.Sounds[new Random().Next(Instance?.Config?.Sounds.Count ?? 1)];
-                        }
-
-                        foreach (var player in players)
-                        {
-                            try
-                            {
-                                player.PrintToChat(Instance?.Localizer.ForPlayer(player, "vote.started") ?? "");
-
-                                if (!string.IsNullOrEmpty(soundToPlay))
-                                {
-                                    player.ExecuteClientCommand($"play {soundToPlay}");
-                                }
-
-                                MenuUtils.ShowKitsuneMenuVoteMaps(player);
-                            }
-                            catch (Exception ex)
-                            {
-                                Instance?.Logger.LogError(ex, "Error showing vote menu to player {PlayerName}", player.PlayerName);
-                            }
-                        }
+                        ShowVoteMenuToPlayers();
 
                         float duration = (float)(Instance?.Config?.VoteMapDuration ?? 15);
                         Instance?.Logger.LogInformation("Vote duration set to {Duration} seconds", duration);
 
-                        Instance?.AddTimer(duration, () =>
-                        {
-                            try
-                            {
-                                var (winningMap, type) = MapUtils.GetWinningMap();
-
-                                if (winningMap != null)
-                                {
-                                    GlobalVariables.NextMap = winningMap;
-                                    Instance?.Logger.LogInformation("Vote completed. Next map: {MapName}", winningMap.MapValue);
-                                }
-                                else if (winningMap == null && type == "extendmap")
-                                {
-                                    if (Instance?.Config?.DependsOnTheRound == true)
-                                    {
-                                        int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
-                                        Server.ExecuteCommand($"mp_maxrounds {(int)timeLeft + extendTime}");
-                                        Instance?.Logger.LogInformation("Vote to extend map. Setting mp_maxrounds to {Rounds}", (int)timeLeft + extendTime);
-                                    }
-                                    else
-                                    {
-                                        int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
-                                        Server.ExecuteCommand($"mp_timelimit {Math.Ceiling((float)timeLeft / 60) + extendTime}");
-                                        Instance?.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", Math.Ceiling((float)timeLeft / 60) + extendTime);
-                                    }
-                                    GlobalVariables.VotedForExtendMap = true;
-                                    GlobalVariables.VotedForCurrentMap = false;
-                                }
-                                else if (winningMap == null && type == "ignorevote")
-                                {
-                                    GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                                    Instance?.Logger.LogInformation("Winning map is Ignore Vote. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
-                                }
-                                else if (winningMap == null && type == "tie")
-                                {
-                                    // This case is handled in GetWinningMap
-                                    Instance?.Logger.LogInformation("Vote ended in a tie. Random map was selected.");
-                                }
-                                else if (winningMap == null && type == "error")
-                                {
-                                    GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                                    Instance?.Logger.LogWarning("Error during vote processing. Selecting random map: {MapName}", GlobalVariables.NextMap?.MapValue);
-                                }
-                                else
-                                {
-                                    GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                                    Instance?.Logger.LogInformation("No winning map determined. Selecting random map: {MapName}", GlobalVariables.NextMap?.MapValue);
-                                }
-
-                                // Clean up
-                                GlobalVariables.Votes.Clear();
-                                GlobalVariables.MapForVotes.Clear();
-                                GlobalVariables.VoteStarted = false;
-                                Instance?.AddTimer(1.0f, () => GlobalVariables.IsVotingInProgress = false);
-
-                                if (type != "extendmap")
-                                {
-                                    GlobalVariables.VotedForCurrentMap = true;
-                                }
-
-                                // Notify players
-                                var activePlayers = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-                                foreach (var player in activePlayers)
-                                {
-                                    try
-                                    {
-                                        if (type == "extendmap")
-                                        {
-                                            player.PrintToChat(Instance?.Localizer.ForPlayer(player, "vote.finished.extend.map.round").Replace("{EXTENDED_TIME}", Instance?.Config?.ExtendMapTime.ToString()) ?? "");
-                                        }
-                                        else
-                                        {
-                                            player.PrintToChat(Instance?.Localizer.ForPlayer(player, "vote.finished").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue) ?? "");
-                                        }
-
-                                        GlobalVariables.KitsuneMenu?.ClearMenus(player);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Instance?.Logger.LogError(ex, "Error notifying player {PlayerName} about vote results", player.PlayerName);
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Instance?.Logger.LogError(ex, "Error processing vote results");
-                                
-                                // Ensure we clean up even if there's an error
-                                GlobalVariables.Votes.Clear();
-                                GlobalVariables.MapForVotes.Clear();
-                                GlobalVariables.VoteStarted = false;
-                                GlobalVariables.IsVotingInProgress = false;
-                                GlobalVariables.VotedForCurrentMap = true;
-                            }
-                        }, TimerFlags.STOP_ON_MAPCHANGE);
+                        Instance?.AddTimer(duration, () => ProcessVoteResults(timeLeft), TimerFlags.STOP_ON_MAPCHANGE);
                     }
                 }
 
@@ -673,6 +707,61 @@ namespace MapCycleAndChooser_COFYYE.Utils
                 Instance?.Logger.LogInformation("Using fallback map due to error: {MapName}",
                     fallbackMap?.MapValue ?? "none available");
                 return fallbackMap;
+            }
+        }
+
+        /// <summary>
+        /// Changes the map to the specified map. Handles workshop maps appropriately.
+        /// </summary>
+        /// <param name="nextMap">The map to change to</param>
+        /// <param name="saveCooldowns">Whether to save cooldowns before changing map</param>
+        /// <param name="setLastMap">Whether to set the last map to the current map</param>
+        /// <returns>True if the map change was initiated, false otherwise</returns>
+        public static bool ChangeMap(Map? nextMap, bool saveCooldowns = true, bool setLastMap = true)
+        {
+            try
+            {
+                if (nextMap == null)
+                {
+                    Instance?.Logger.LogError("Attempted to change map with null nextMap");
+                    return false;
+                }
+
+                // Save cooldowns before map change if requested
+                if (saveCooldowns)
+                {
+                    CooldownManager.SaveCooldowns();
+                }
+                
+                // Set last map if requested
+                if (setLastMap)
+                {
+                    GlobalVariables.LastMap = Server.MapName;
+                }
+                
+                // Change to the next map
+                if (nextMap.MapIsWorkshop)
+                {
+                    if (string.IsNullOrEmpty(nextMap.MapWorkshopId))
+                    {
+                        Server.ExecuteCommand($"ds_workshop_changelevel {nextMap.MapValue}");
+                    }
+                    else
+                    {
+                        Server.ExecuteCommand($"host_workshop_map {nextMap.MapWorkshopId}");
+                    }
+                }
+                else
+                {
+                    Server.ExecuteCommand($"changelevel {nextMap.MapValue}");
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Instance?.Logger.LogError(ex, "Error changing map to {MapName}", nextMap?.MapValue ?? "unknown");
+                return false;
             }
         }
 
