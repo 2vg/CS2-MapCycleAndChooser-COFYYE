@@ -2,8 +2,8 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Admin;
-using MapCycleAndChooser_COFYYE.Classes;
-using MapCycleAndChooser_COFYYE.Variables;
+using Mappen.Classes;
+using Mappen.Variables;
 using Microsoft.Extensions.Logging;
 using Menu;
 using Menu.Enums;
@@ -11,11 +11,11 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class NominateUtils
     {
-        public static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        public static Mappen Instance => Mappen.Instance;
 
         // Check if player can nominate a map
         public static bool CanPlayerNominate(CCSPlayerController player)

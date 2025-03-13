@@ -1,15 +1,15 @@
-﻿﻿using CounterStrikeSharp.API;
+﻿﻿sing CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
-using MapCycleAndChooser_COFYYE.Variables;
+using Mappen.Variables;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class ServerUtils
     {
-        public static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        public static Mappen Instance => Mappen.Instance;
 
         // Helper method to create a new config with updated VoteMapDuration
         private static Config.Config CreateConfigWithVoteMapDuration(Config.Config currentConfig, int newDuration)

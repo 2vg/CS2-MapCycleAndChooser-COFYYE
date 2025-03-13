@@ -1,18 +1,18 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿sing CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Timers;
-using MapCycleAndChooser_COFYYE.Classes;
-using MapCycleAndChooser_COFYYE.Variables;
+using Mappen.Classes;
+using Mappen.Variables;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class MapUtils
     {
-        public static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        public static Mappen Instance => Mappen.Instance;
         public static void PopulateMapsForVotes()
         {
             try

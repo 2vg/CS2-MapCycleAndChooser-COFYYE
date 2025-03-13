@@ -1,8 +1,8 @@
-﻿﻿﻿﻿using MapCycleAndChooser_COFYYE.Classes;
+﻿﻿using Mappen.Classes;
 using Menu;
 using System.Diagnostics;
 
-namespace MapCycleAndChooser_COFYYE.Variables
+namespace Mappen.Variables
 {
     public static class GlobalVariables
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace MapCycleAndChooser_COFYYE.Config
+namespace Mappen.Config
 {
     /// <summary>
     /// Centralized version information for the plugin

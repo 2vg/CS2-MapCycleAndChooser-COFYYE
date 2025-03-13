@@ -1,19 +1,19 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿sing CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API;
 using System.Text;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Timers;
-using MapCycleAndChooser_COFYYE.Classes;
-using MapCycleAndChooser_COFYYE.Variables;
+using Mappen.Classes;
+using Mappen.Variables;
 using Microsoft.Extensions.Logging;
 using Menu;
 using Menu.Enums;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class MenuUtils
     {
-        public static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        public static Mappen Instance => Mappen.Instance;
         public static Dictionary<string, PlayerMenu> PlayersMenu { get; } = [];
 
         //private static ScreenMenu? ScreenMenu = null;

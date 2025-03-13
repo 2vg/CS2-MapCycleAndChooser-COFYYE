@@ -2,17 +2,17 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
-using MapCycleAndChooser_COFYYE.Classes;
-using MapCycleAndChooser_COFYYE.Variables;
+using Mappen.Classes;
+using Mappen.Variables;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class RtvUtils
     {
-        public static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        public static Mappen Instance => Mappen.Instance;
 
         public static bool CanPlayerRtv(CCSPlayerController player)
         {

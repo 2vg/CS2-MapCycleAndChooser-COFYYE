@@ -1,9 +1,9 @@
 using System.Text.Json;
 using CounterStrikeSharp.API.Core;
-using MapCycleAndChooser_COFYYE.Classes;
+using Mappen.Classes;
 using Microsoft.Extensions.Logging;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public class MapCooldownData
     {
@@ -13,10 +13,10 @@ namespace MapCycleAndChooser_COFYYE.Utils
 
     public static class CooldownManager
     {
-        private static readonly string CooldownFilePath = Path.Combine(Application.RootDirectory, "configs/plugins/MapCycleAndChooser-COFYYE/cooldowns.json");
+        private static readonly string CooldownFilePath = Path.Combine(Application.RootDirectory, "configs/plugins/Mappen/cooldowns.json");
         private static readonly Dictionary<string, int> MapCooldowns = new();
         private static readonly object FileLock = new();
-        private static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        private static Mappen Instance => Mappen.Instance;
 
         static CooldownManager()
         {

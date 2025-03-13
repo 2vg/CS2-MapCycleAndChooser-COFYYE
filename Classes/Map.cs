@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace MapCycleAndChooser_COFYYE.Classes
+namespace Mappen.Classes
 {
     public class Map(string mapValue, string mapDisplay, bool mapIsWorkshop, string mapWorkshopId, bool mapCycleEnabled, bool mapCanVote, int mapMinPlayers, int mapMaxPlayers, string mapCycleStartTime, string mapCycleEndTime, int mapCooldownCycles = 0)
     {
