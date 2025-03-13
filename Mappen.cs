@@ -378,9 +378,38 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
                 // Set last map
                 GlobalVariables.LastMap = Server.MapName;
                 
-                if (GlobalVariables.NextMap != null)
+                // Check if RTV was triggered
+                if (Config?.RtvEnable == true && GlobalVariables.RtvTriggered)
                 {
-                    // Use the common map change utility method
+                    Logger.LogInformation("RTV was triggered, changing map now");
+                    
+                    if (GlobalVariables.NextMap != null)
+                    {
+                        // Use the common map change utility method
+                        MapUtils.ChangeMap(GlobalVariables.NextMap);
+                    }
+                    else
+                    {
+                        // If NextMap is null, select a random map
+                        var randomMap = MapUtils.GetRandomNextMapByPlayers();
+                        if (randomMap != null)
+                        {
+                            Logger.LogInformation("RTV triggered but NextMap was null, using random map: {MapName}", randomMap.MapValue);
+                            MapUtils.ChangeMap(randomMap);
+                        }
+                        else
+                        {
+                            Logger.LogWarning("RTV triggered but no eligible maps found. Map will not change.");
+                            Server.PrintToChatAll("No eligible maps found. Map will not change.");
+                        }
+                    }
+                    
+                    // Reset RTV flag
+                    GlobalVariables.RtvTriggered = false;
+                }
+                else if (GlobalVariables.NextMap != null)
+                {
+                    // Normal map change at end of match
                     MapUtils.ChangeMap(GlobalVariables.NextMap);
                 }
                 else
@@ -404,6 +433,12 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error during map change");
+                
+                // Reset RTV flag in case of error
+                if (GlobalVariables.RtvTriggered)
+                {
+                    GlobalVariables.RtvTriggered = false;
+                }
             }
         }, TimerFlags.STOP_ON_MAPCHANGE);
 
@@ -429,28 +464,18 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         // Check if RTV was triggered and we need to change map at round end
         if (Config?.RtvEnable == true && GlobalVariables.RtvTriggered && !Config.RtvChangeInstantly)
         {
-            try
+            // Instead of changing the map here, we'll set a flag to indicate that the map should be changed
+            // in the CsWinPanelMatchHandler, which is the proper event for map changes
+            Logger.LogInformation("RTV triggered, map will change at the end of the match");
+            
+            // Make sure we have a next map set
+            if (GlobalVariables.NextMap == null)
             {
-                if (GlobalVariables.NextMap != null)
-                {
-                    // Use the common map change utility method
-                    MapUtils.ChangeMap(GlobalVariables.NextMap);
-                }
-                else
-                {
-                    Logger.LogWarning("RTV was triggered but NextMap is null. Map will not change.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error during RTV map change in RoundEndHandler");
-            }
-            finally
-            {
-                // Always reset the flag, regardless of success or failure
-                GlobalVariables.RtvTriggered = false;
+                Logger.LogWarning("RTV was triggered but NextMap is null. Selecting a random map.");
+                GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
             }
             
+            // Don't reset RtvTriggered flag here, it will be reset in CsWinPanelMatchHandler
             return HookResult.Continue;
         }
 
