@@ -1,6 +1,7 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
+using CounterStrikeSharp.API.Modules.Admin;
 using MapCycleAndChooser_COFYYE.Classes;
 using MapCycleAndChooser_COFYYE.Variables;
 using Microsoft.Extensions.Logging;
@@ -108,6 +109,33 @@ namespace MapCycleAndChooser_COFYYE.Utils
             return true;
         }
 
+        // Check if map is valid for force nomination (admin only)
+        public static bool IsMapValidForForceNomination(Map map, CCSPlayerController player)
+        {
+            // Cannot nominate current map
+            if (map.MapValue == Server.MapName)
+            {
+                player?.PrintToChat(Instance.Localizer.ForPlayer(player, "nominate.current.map"));
+                return false;
+            }
+
+            // Check if map is already nominated
+            if (GlobalVariables.NominatedMaps.ContainsKey(map.MapValue))
+            {
+                player?.PrintToChat(Instance.Localizer.ForPlayer(player, "nominate.already.nominated"));
+                return false;
+            }
+
+            // Check if map is in cycle
+            if (!map.MapCycleEnabled)
+            {
+                player?.PrintToChat(Instance.Localizer.ForPlayer(player, "nominate.not.in.cycle"));
+                return false;
+            }
+
+            return true;
+        }
+
         // Remove player's nomination
         public static bool RemovePlayerNomination(CCSPlayerController player)
         {
@@ -197,13 +225,86 @@ namespace MapCycleAndChooser_COFYYE.Utils
             ShowMatchingMapsMenu(player, matchingMaps);
         }
 
+        // Process force nominate command with partial map name (admin only)
+        public static void ProcessForceNominateCommand(CCSPlayerController player, string partialMapName)
+        {
+            if (!PlayerUtils.IsValidPlayer(player)) return;
+
+            // Check admin permissions
+            if (!AdminManager.PlayerHasPermissions(player, "@css/changemap") && !AdminManager.PlayerHasPermissions(player, "@css/root"))
+            {
+                player.PrintToChat(Instance.Localizer.ForPlayer(player, "command.no.perm"));
+                return;
+            }
+
+            if (!CanPlayerNominate(player))
+            {
+                player.PrintToChat(Instance.Localizer.ForPlayer(player, "nominate.already.used"));
+                return;
+            }
+
+            // Find maps that match the partial name (for force nominate)
+            var matchingMaps = FindMatchingMapsForForceNominate(partialMapName);
+            
+            if (matchingMaps.Count == 0)
+            {
+                player.PrintToChat(Instance.Localizer.ForPlayer(player, "nominate.no.matches")
+                    .Replace("{MAP_NAME}", partialMapName));
+                return;
+            }
+            
+            if (matchingMaps.Count == 1)
+            {
+                // Only one match, force nominate directly
+                if (ForceNominateMap(player, matchingMaps[0]))
+                {
+                    player.ExecuteClientCommand("play sounds/ui/item_sticker_select.vsnd_c");
+                }
+                return;
+            }
+            
+            // Multiple matches, show menu
+            ShowMatchingMapsMenuForForceNominate(player, matchingMaps);
+        }
+
+        // Force nominate a map (admin only)
+        public static bool ForceNominateMap(CCSPlayerController player, Map map)
+        {
+            if (!PlayerUtils.IsValidPlayer(player)) return false;
+
+            // Check admin permissions
+            if (!AdminManager.PlayerHasPermissions(player, "@css/changemap") && !AdminManager.PlayerHasPermissions(player, "@css/root"))
+            {
+                player.PrintToChat(Instance.Localizer.ForPlayer(player, "command.no.perm"));
+                return false;
+            }
+
+            if (!CanPlayerNominate(player))
+                return false;
+
+            // Check if map is valid for force nomination
+            if (!IsMapValidForForceNomination(map, player))
+                return false;
+
+            // Add nomination
+            GlobalVariables.NominatedMaps[map.MapValue] = map;
+            GlobalVariables.PlayerNominations[player.SteamID.ToString()] = map.MapValue;
+
+            // Notify all players
+            Server.PrintToChatAll(Instance.Localizer.ForPlayer(player, "nominate.map.added")
+                .Replace("{PLAYER_NAME}", player.PlayerName)
+                .Replace("{MAP_NAME}", map.MapValue));
+
+            return true;
+        }
+
         // Find maps matching partial name
         private static List<Map> FindMatchingMaps(string partialMapName)
         {
             int currentPlayers = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).Count();
             
             return GlobalVariables.Maps
-                .Where(map => 
+                .Where(map =>
                     (map.MapValue.IndexOf(partialMapName, StringComparison.OrdinalIgnoreCase) >= 0 ||
                      map.MapDisplay.IndexOf(partialMapName, StringComparison.OrdinalIgnoreCase) >= 0) &&
                     map.MapValue != Server.MapName &&
@@ -214,6 +315,20 @@ namespace MapCycleAndChooser_COFYYE.Utils
                     MapUtils.CheckMapInCycleTime(map) &&
                     !GlobalVariables.NominatedMaps.ContainsKey(map.MapValue) &&
                     (!(Instance.Config.EnableMapCooldown) || CooldownManager.GetMapCooldown(map.MapValue) <= 0))
+                .OrderBy(map => map.MapValue)
+                .ToList();
+        }
+
+        // Find maps matching partial name for force nominate (admin only)
+        private static List<Map> FindMatchingMapsForForceNominate(string partialMapName)
+        {
+            return GlobalVariables.Maps
+                .Where(map =>
+                    (map.MapValue.IndexOf(partialMapName, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     map.MapDisplay.IndexOf(partialMapName, StringComparison.OrdinalIgnoreCase) >= 0) &&
+                    map.MapValue != Server.MapName &&
+                    map.MapCycleEnabled &&
+                    !GlobalVariables.NominatedMaps.ContainsKey(map.MapValue))
                 .OrderBy(map => map.MapValue)
                 .ToList();
         }
@@ -254,6 +369,49 @@ namespace MapCycleAndChooser_COFYYE.Utils
                     Map selectedMap = (Map)mapSelected;
                     
                     if (NominateMap(player, selectedMap))
+                    {
+                        player.ExecuteClientCommand("play sounds/ui/item_sticker_select.vsnd_c");
+                    }
+                }
+            }, false, freezePlayer: Instance?.Config?.EnablePlayerFreezeInMenu ?? false, defaultValues: mapsDict, disableDeveloper: true);
+        }
+
+        // Show menu with matching maps for force nominate (admin only)
+        private static void ShowMatchingMapsMenuForForceNominate(CCSPlayerController player, List<Map> matchingMaps)
+        {
+            if (GlobalVariables.KitsuneMenu == null)
+            {
+                Instance?.Logger.LogError("Menu object is null. Cannot show force nominate menu to {PlayerName}.", player?.PlayerName);
+                return;
+            }
+
+            string playerSteamId = player.SteamID.ToString();
+            if (!MenuUtils.PlayersMenu.TryGetValue(playerSteamId, out PlayerMenu? pm)) return;
+
+            List<MenuItem> items = [];
+            var mapsDict = new Dictionary<int, object>();
+            int i = 0;
+
+            string mapTitle = Instance?.Localizer?.ForPlayer(player, "menu.item.map") ?? "";
+            foreach (Map map in matchingMaps)
+            {
+                string mapText = map != null
+                    ? (Instance?.Config?.DisplayMapByValue == true ? map.MapValue : map.MapDisplay)
+                    : "Unknown Map";
+
+                items.Add(new MenuItem(MenuItemType.Button, [new MenuValue(mapTitle.Replace("{MAP_NAME}", mapText))]));
+                mapsDict[i++] = map;
+            }
+
+            GlobalVariables.KitsuneMenu?.ShowScrollableMenu(player, Instance?.Localizer.ForPlayer(player, "menu.title.nominate") ?? "", items, (buttons, menu, selected) =>
+            {
+                if (selected == null) return;
+
+                if (buttons == MenuButtons.Select && mapsDict.TryGetValue(menu.Option, out var mapSelected))
+                {
+                    Map selectedMap = (Map)mapSelected;
+                    
+                    if (ForceNominateMap(player, selectedMap))
                     {
                         player.ExecuteClientCommand("play sounds/ui/item_sticker_select.vsnd_c");
                     }

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -98,8 +98,11 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             AddCommand(cmd, "Nominate a map for voting", OnNominateMap);
         }
         
-        // Add nominations commands
-        foreach (var cmd in Config?.CommandsCSSNominations ?? ["css_nominations", "css_noms"])
+        // Add force nominate commands (admin only)
+        AddCommand("css_force_nominate", "Force nominate a map for voting (admin only)", OnForceNominateMap);
+        AddCommand("css_force_nom", "Force nominate a map for voting (admin only)", OnForceNominateMap);
+        
+        foreach (var cmd in Config?.CommandsCSSNominations ?? ["css_nomlist", "css_nomlist"])
         {
             AddCommand(cmd, "Show current map nominations", OnShowNominations);
         }
@@ -276,6 +279,28 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         // Process nominate command with map name
         string mapName = command.ArgString.Trim();
         NominateUtils.ProcessNominateCommand(caller!, mapName);
+    }
+
+    public void OnForceNominateMap(CCSPlayerController? caller, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(caller)) return;
+
+        // Check admin permissions
+        if (!AdminManager.PlayerHasPermissions(caller, "@css/changemap") && !AdminManager.PlayerHasPermissions(caller, "@css/root"))
+        {
+            caller?.PrintToChat(Localizer.ForPlayer(caller, "command.no.perm"));
+            return;
+        }
+
+        if (command.ArgString == "")
+        {
+            caller?.PrintToChat(Localizer.ForPlayer(caller, "nominate.force.usage"));
+            return;
+        }
+
+        // Process force nominate command with map name
+        string mapName = command.ArgString.Trim();
+        NominateUtils.ProcessForceNominateCommand(caller!, mapName);
     }
 
     public void OnShowNominations(CCSPlayerController? caller, CommandInfo command)
@@ -521,8 +546,40 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             return HookResult.Continue;
         }
 
-        // Handle nominations command
-        if (@event.Text.Trim() == "!nominations" || @event.Text.Trim() == "!noms")
+        // Handle force nominate command (admin only)
+        if (@event.Text.Trim().StartsWith("!force_nominate") || @event.Text.Trim().StartsWith("!force_nom"))
+        {
+            // Get the player controller from the userid
+            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+
+            // `player != null` is supress for CS8602 and CS8064
+            if (PlayerUtils.IsValidPlayer(player) && player != null)
+            {
+                // Check admin permissions
+                if (!AdminManager.PlayerHasPermissions(player, "@css/changemap") && !AdminManager.PlayerHasPermissions(player, "@css/root"))
+                {
+                    player.PrintToChat(Localizer.ForPlayer(player, "command.no.perm"));
+                    return HookResult.Continue;
+                }
+
+                // Check if command has arguments
+                string[] parts = @event.Text.Trim().Split(' ', 2);
+                if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]))
+                {
+                    // Process force nominate command with map name
+                    string mapName = parts[1].Trim();
+                    NominateUtils.ProcessForceNominateCommand(player, mapName);
+                }
+                else
+                {
+                    player.PrintToChat(Localizer.ForPlayer(player, "nominate.force.usage"));
+                }
+            }
+            return HookResult.Continue;
+        }
+
+        // Handle nomlist command (formerly nominations)
+        if (@event.Text.Trim() == "!nomlist")
         {
             // Get the player controller from the userid
             var player = Utilities.GetPlayerFromUserid(@event.Userid);
