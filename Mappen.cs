@@ -1,4 +1,4 @@
-﻿﻿sing CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;

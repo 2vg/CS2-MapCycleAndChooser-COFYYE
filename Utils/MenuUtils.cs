@@ -1,4 +1,4 @@
-﻿﻿sing CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API;
 using System.Text;
 using CounterStrikeSharp.API.Core.Translations;

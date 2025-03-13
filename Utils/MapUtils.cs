@@ -1,4 +1,4 @@
-﻿﻿sing CounterStrikeSharp.API;
+﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
