@@ -94,6 +94,9 @@ To run this plugin, you need the following dependencies:
      ```
 ## Commands and Permissions
 
+### Chat Commands
+These commands can be used in the game chat:
+
 1. **`!nextmap`**
    - **Description**: Displays the next map in the cycle.
    - **Access**: Available to all players.
@@ -123,29 +126,82 @@ To run this plugin, you need the following dependencies:
    - **Description**: Shows the current map nominations.
    - **Access**: Available to all players.
 
-8. **`css_nextmap`**
+### Console Commands
+These commands can be used in the console and are registered using attributes:
+
+1. **`css_setnextmap`**
    - **Description**: Sets the next map in the rotation.
+   - **Usage**: `css_setnextmap <map>`
    - **Access**: Admins only, requires `@css/changemap` permission.
 
-9. **`css_maps`**
+2. **`css_maps`**
    - **Description**: Lists all maps and allows instant map changes.
    - **Access**: Admins only, requires `@css/changemap` permission.
 
-10. **`css_nominate`** or **`css_nom`**
-    - **Description**: Console command to nominate a map.
-    - **Usage**: `css_nominate <map>` or just `css_nominate` to open a menu.
+3. **`css_nominate`** or **`css_nom`**
+   - **Description**: Console command to nominate a map.
+   - **Usage**: `css_nominate <map>` or just `css_nominate` to open a menu.
+   - **Access**: Available to all players.
+
+4. **`css_force_nominate`** or **`css_force_nom`**
+   - **Description**: Force nominate a map for voting (bypasses restrictions).
+   - **Usage**: `css_force_nominate <map>`
+   - **Access**: Admins only, requires `@css/changemap` permission.
+
+5. **`css_nomlist`**
+   - **Description**: Console command to show current map nominations.
+   - **Access**: Available to all players.
+
+6. **`css_rtv`**
+   - **Description**: Console command to rock the vote.
+   - **Access**: Available to all players.
+
+7. **`css_nextmap`**
+   - **Description**: Console command to show the next map.
+   - **Access**: Available to all players.
+
+8. **`css_currentmap`**
+   - **Description**: Console command to show the current map.
+   - **Access**: Available to all players.
+
+9. **`css_timeleft`**
+   - **Description**: Console command to show time left on the current map.
+   - **Access**: Available to all players.
+
+10. **`css_lastmap`**
+    - **Description**: Console command to show the last map played.
     - **Access**: Available to all players.
 
-11. **`css_nominations`** or **`css_noms`**
-    - **Description**: Console command to show current map nominations.
-    - **Access**: Available to all players.
-   - **Access**: Admins only, requires `@css/changemap` permission.
+## What's New in v1.2
+
+Version 1.2 includes several significant improvements:
+
+### Command Registration System Refactoring
+
+The command registration system has been refactored to use attributes instead of manual registration:
+
+1. **Attribute-Based Command Registration**:
+   - Commands are now registered using attributes like `[ConsoleCommand]`, `[CommandHelper]`, and `[RequiresPermissions]`.
+   - This makes the code more maintainable and follows CounterStrikeSharp's recommended practices.
+   - All console commands (`css_*`) are now registered using this method.
+
+2. **Expanded Console Commands**:
+   - Added more console commands for better functionality.
+   - Each chat command now has a corresponding console command.
+
+Previously, chat was handled manually, and as the number of commands increased, maintainability became worse.
+
+By unifying the implementation, we will make it easier to maintain.
+
+### Configuration System Improvements
+
+The configuration system has been significantly enhanced for better organization and management.
 
 ## Configuration Tutorial
 
 Below is a step-by-step guide explaining the available configuration options for **MapCycleAndChooser**. These options allow you to customize how the plugin behaves and interacts with players.
 
-### Configuration File Structure Changes in v1.2
+### Configuration File Structure Changes
 
 In version 1.2, the configuration system has been significantly improved:
 
@@ -314,53 +370,18 @@ In version 1.2, the configuration system has been significantly improved:
     - **Description**: Enables or disables map cooldowns to prevent the same maps from being played too frequently.  
       - When enabled, maps that were recently played will be excluded from the map cycle and voting until their cooldown expires.
 
-27. **`commands_css_nextmap`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `css_nextmap`.  
-
-28. **`commands_css_maps`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `css_maps`.  
-
-29. **`commands_nextmap`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `!nextmap`.  
-
-30. **`commands_lastmap`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `!lastmap`.  
-
-31. **`commands_currentmap`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `!currentmap`.  
-
-32. **`commands_timeleft`**  
-    - **Possible Values**: List of strings  
-    - **Description**: Defines alias commands for `!timeleft`.  
-
-33. **`commands_rtv`**
-    - **Possible Values**: List of strings
-    - **Description**: Defines alias commands for `!rtv`.
-
-34. **`commands_css_nominate`**
-    - **Possible Values**: List of strings
-    - **Description**: Defines alias commands for `css_nominate`.
-
-35. **`commands_css_nominations`**
-    - **Possible Values**: List of strings
-    - **Description**: Defines alias commands for `css_nominations`.
-36. **`sounds`**
+27. **`sounds`**
    - **Possible Values**: An array of string paths to sound files.
    - **Description**: Specifies the sounds that play when map voting begins.
      - Add as many sounds as you'd like, and the plugin will play one randomly.
      - Leave this field empty (`[]`) to disable sounds.
 
-37. **`enable_workshop_collection_sync`**
+28. **`enable_workshop_collection_sync`**
    - **Possible Values**: `true`, `false`
    - **Description**: Enables or disables automatic synchronization of maps from Steam Workshop collections.
      - When enabled, the plugin will fetch maps from the specified Workshop collections and add them to your map pool.
 
-38. **`workshop_collection_ids`**
+29. **`workshop_collection_ids`**
    - **Possible Values**: List of strings (Workshop collection IDs)
    - **Description**: List of Steam Workshop collection IDs to synchronize maps from.
      - Example: `["123456789", "987654321"]`
