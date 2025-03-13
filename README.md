@@ -65,38 +65,6 @@ To run this plugin, you need the following dependencies:
      ```
 ## Commands and Permissions
 
-### Chat Commands
-These commands can be used in the game chat:
-
-1. **`!nextmap`**
-   - **Description**: Displays the next map in the cycle.
-   - **Access**: Available to all players.
-     
-2. **`!timeleft`**
-   - **Description**: Displays the remaining time before the current map ends (rounds/minutes).
-   - **Access**: Available to all players.
-
-3. **`!currentmap`**
-   - **Description**: Displays the current map name.
-   - **Access**: Available to all players.
-
-4. **`!lastmap`**
-   - **Description**: Displays the last played map.
-   - **Access**: Available to all players.
-
-5. **`!rtv`** or **`!rockthevote`**
-   - **Description**: Initiates a Rock The Vote to change the current map.
-   - **Access**: Available to all players.
-
-6. **`!nominate`** or **`!nom`**
-   - **Description**: Nominates a map to be included in the next map vote.
-   - **Usage**: `!nominate <map>` or just `!nominate` to open a menu.
-   - **Access**: Available to all players.
-
-7. **`!nominations`** or **`!noms`**
-   - **Description**: Shows the current map nominations.
-   - **Access**: Available to all players.
-
 ### Console Commands
 These commands can be used in the console and are registered using attributes:
 
