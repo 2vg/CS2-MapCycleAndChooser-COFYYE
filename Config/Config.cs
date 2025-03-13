@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using MapCycleAndChooser_COFYYE.Classes;
 using System.Text.Json.Serialization;
 
@@ -22,13 +22,6 @@ namespace MapCycleAndChooser_COFYYE.Config
 
         [JsonPropertyName("rtv_respect_nextmap")]
         public bool RtvRespectNextmap { get; init; } = true; // if true, uses the already set nextmap when RTV is triggered
-
-        [JsonPropertyName("commands_rtv")]
-        public List<string> CommandsRtv { get; init; } =
-        [
-            "!rtv",
-            "!rockthevote"
-        ];
 
         [JsonPropertyName("vote_map_enable")]
         public bool VoteMapEnable { get; init; } = true;
@@ -96,62 +89,6 @@ namespace MapCycleAndChooser_COFYYE.Config
         [JsonPropertyName("vote_map_count")]
         public int VoteMapCount { get; init; } = 5;
 
-        [JsonPropertyName("commands_css_nextmap")]
-        public List<string> CommandsCSSNextmap { get; init; } =
-        [
-            "css_nextmap",
-            "css_sledecamapa"
-        ];
-
-        [JsonPropertyName("commands_css_maps")]
-        public List<string> CommandsCSSMaps { get; init; } =
-        [
-            "css_maps",
-            "css_mape"
-        ];
-
-        [JsonPropertyName("commands_css_nominate")]
-        public List<string> CommandsCSSNominate { get; init; } =
-        [
-            "css_nominate",
-            "css_nom"
-        ];
-
-        [JsonPropertyName("commands_css_nominations")]
-        public List<string> CommandsCSSNominations { get; init; } =
-        [
-            "css_nominations",
-            "css_noms"
-        ];
-
-        [JsonPropertyName("commands_nextmap")]
-        public List<string> CommandsNextMap { get; init; } =
-        [
-            "!nextmap",
-            "!sledecamapa"
-        ];
-
-        [JsonPropertyName("commands_lastmap")]
-        public List<string> CommandsLastMap { get; init; } =
-        [
-            "!lastmap",
-            "!proslamapa"
-        ];
-
-        [JsonPropertyName("commands_currentmap")]
-        public List<string> CommandsCurrentMap { get; init; } =
-        [
-            "!currentmap",
-            "!trenutnamapa"
-        ];
-
-        [JsonPropertyName("commands_timeleft")]
-        public List<string> CommandsTimeLeft { get; init; } =
-        [
-            "!timeleft",
-            "!preostalovreme"
-        ];
-
         [JsonPropertyName("sounds")]
         public List<string> Sounds { get; init; } = 
         [
@@ -161,6 +98,12 @@ namespace MapCycleAndChooser_COFYYE.Config
 
         [JsonPropertyName("enable_map_cooldown")]
         public bool EnableMapCooldown { get; init; } = true;
+
+        [JsonPropertyName("enable_workshop_collection_sync")]
+        public bool EnableWorkshopCollectionSync { get; init; } = false;
+
+        [JsonPropertyName("workshop_collection_ids")]
+        public List<string> WorkshopCollectionIds { get; init; } = [];
 
         [JsonPropertyName("maps")]
         public List<Map> Maps { get; init; } = [];

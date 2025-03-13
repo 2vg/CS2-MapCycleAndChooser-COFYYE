@@ -215,7 +215,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
                         : "Unknown Map";
 
                     items.Add(new MenuItem(MenuItemType.Button, [new MenuValue(mapTitle.Replace("{MAP_NAME}", mapText))]));
-                    mapsDict[i++] = map.MapValue; // 常に技術名を使用
+                    mapsDict[i++] = map.MapValue;
                 }
 
                 GlobalVariables.KitsuneMenu?.ShowScrollableMenu(player, Instance?.Localizer.ForPlayer(player, "menu.title.maps") ?? "", items, (buttons, menu, selected) =>

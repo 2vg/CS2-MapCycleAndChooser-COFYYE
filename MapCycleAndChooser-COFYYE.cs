@@ -1,16 +1,19 @@
-﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using MapCycleAndChooser_COFYYE.Utils;
 using MapCycleAndChooser_COFYYE.Classes;
 using CounterStrikeSharp.API.Modules.Memory;
 using MapCycleAndChooser_COFYYE.Variables;
 using Menu;
+using System.Runtime.InteropServices;
 namespace MapCycleAndChooser_COFYYE;
 
 public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
@@ -19,9 +22,25 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     public override string ModuleVersion => "1.2";
     public override string ModuleAuthor => "cofyye";
     public override string ModuleDescription => "https://github.com/cofyye";
-
     public static MapCycleAndChooser Instance { get; set; } = new();
     public Config.Config Config { get; set; } = new();
+
+    public string workShopID = "";
+    public string workShopURL = "";
+
+    private delegate IntPtr GetAddonNameDelegate(IntPtr thisPtr);
+    private readonly ForceFullUpdate.INetworkServerService networkServerService = new();
+
+    public string GetAddonID()
+    {
+        IntPtr networkGameServer = networkServerService.GetIGameServer().Handle;
+        IntPtr vtablePtr = Marshal.ReadIntPtr(networkGameServer);
+        IntPtr functionPtr = Marshal.ReadIntPtr(vtablePtr + (25 * IntPtr.Size));
+        var getAddonName = Marshal.GetDelegateForFunctionPointer<GetAddonNameDelegate>(functionPtr);
+        IntPtr result = getAddonName(networkGameServer);
+        return Marshal.PtrToStringAnsi(result)!.Split(',')[0];
+    }
+
 
     public void OnConfigParsed(Config.Config config)
     {
@@ -60,26 +79,19 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         // Load saved cooldowns from file
         Utils.CooldownManager.LoadCooldowns();
         Logger.LogInformation("Loaded map cooldowns from file.");
+        
+        // Sync Workshop collections if enabled
+        if (Config.EnableWorkshopCollectionSync)
+        {
+            Utils.WorkshopUtils.SyncWorkshopCollections();
+        }
     }
 
     public override void Load(bool hotReload)
     {
         base.Load(hotReload);
 
-        AddCommand("css_nextmap", "Set a next map", OnSetNextMap);
-        AddCommand("css_maps", "List of all maps", OnMapsList);
-        
-        // Add nominate commands
-        foreach (var cmd in Config?.CommandsCSSNominate ?? ["css_nominate", "css_nom"])
-        {
-            AddCommand(cmd, "Nominate a map for voting", OnNominateMap);
-        }
-        
-        // Add nominations commands
-        foreach (var cmd in Config?.CommandsCSSNominations ?? ["css_nominations", "css_noms"])
-        {
-            AddCommand(cmd, "Show current map nominations", OnShowNominations);
-        }
+        // Commands are now registered using attributes
 
         RegisterEventHandler<EventCsWinPanelMatch>(CsWinPanelMatchHandler);
         RegisterEventHandler<EventRoundStart>(RoundStartHandler);
@@ -253,6 +265,28 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         // Process nominate command with map name
         string mapName = command.ArgString.Trim();
         NominateUtils.ProcessNominateCommand(caller!, mapName);
+    }
+
+    public void OnForceNominateMap(CCSPlayerController? caller, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(caller)) return;
+
+        // Check admin permissions
+        if (!AdminManager.PlayerHasPermissions(caller, "@css/changemap") && !AdminManager.PlayerHasPermissions(caller, "@css/root"))
+        {
+            caller?.PrintToChat(Localizer.ForPlayer(caller, "command.no.perm"));
+            return;
+        }
+
+        if (command.ArgString == "")
+        {
+            caller?.PrintToChat(Localizer.ForPlayer(caller, "nominate.force.usage"));
+            return;
+        }
+
+        // Process force nominate command with map name
+        string mapName = command.ArgString.Trim();
+        NominateUtils.ProcessForceNominateCommand(caller!, mapName);
     }
 
     public void OnShowNominations(CCSPlayerController? caller, CommandInfo command)
@@ -432,193 +466,11 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         if(@event == null) return HookResult.Continue;
 
-        if (Config?.CommandsRtv?.Contains(@event.Text.Trim()) == true)
-        {
-            // Get the player controller from the userid
-            var player = Utilities.GetPlayerFromUserid(@event.Userid);
+        // RTV commands are now handled via attributes
 
-            // `player != null` is supress for CS8602 and CS8064
-            if (PlayerUtils.IsValidPlayer(player) && player != null)
-            {
-                if (Config?.RtvEnable != true)
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "rtv.disabled"));
-                    return HookResult.Continue;
-                }
+        // Nominate commands are now handled via attributes
 
-                if (RtvUtils.CanPlayerRtv(player))
-                {
-                    RtvUtils.AddPlayerRtv(player);
-                }
-                else
-                {
-                    // Check why player can't RTV
-                    float currentTime = (float)GlobalVariables.Timers.Elapsed.TotalSeconds;
-                    if (currentTime - GlobalVariables.MapStartTime < Config.RtvDelay)
-                    {
-                        int remainingTime = (int)(Config.RtvDelay - (currentTime - GlobalVariables.MapStartTime));
-                        player.PrintToChat(Localizer.ForPlayer(player, "rtv.too.early").Replace("{TIME}", remainingTime.ToString()));
-                    }
-                    else if (GlobalVariables.RtvPlayers.Contains(player.SteamID.ToString()))
-                    {
-                        player.PrintToChat(Localizer.ForPlayer(player, "rtv.already.voted"));
-                    }
-                    else if (GlobalVariables.IsVotingInProgress || GlobalVariables.VoteStarted)
-                    {
-                        player.PrintToChat(Localizer.ForPlayer(player, "rtv.vote.in.progress"));
-                    }
-                }
-            }
-            return HookResult.Continue;
-        }
-
-        // Handle nominate command
-        if (@event.Text.Trim().StartsWith("!nominate") || @event.Text.Trim().StartsWith("!nom"))
-        {
-            // Get the player controller from the userid
-            var player = Utilities.GetPlayerFromUserid(@event.Userid);
-
-            // `player != null` is supress for CS8602 and CS8064
-            if (PlayerUtils.IsValidPlayer(player) && player != null)
-            {
-                // Check if command has arguments
-                string[] parts = @event.Text.Trim().Split(' ', 2);
-                if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]))
-                {
-                    // Process nominate command with map name
-                    string mapName = parts[1].Trim();
-                    NominateUtils.ProcessNominateCommand(player, mapName);
-                }
-                else
-                {
-                    // Show nominate menu
-                    NominateUtils.ShowNominateMenu(player);
-                }
-            }
-            return HookResult.Continue;
-        }
-
-        // Handle nominations command
-        if (@event.Text.Trim() == "!nominations" || @event.Text.Trim() == "!noms")
-        {
-            // Get the player controller from the userid
-            var player = Utilities.GetPlayerFromUserid(@event.Userid);
-
-            // `player != null` is supress for CS8602 and CS8064
-            if (PlayerUtils.IsValidPlayer(player) && player != null)
-            {
-                NominateUtils.ShowNominations(player);
-            }
-            return HookResult.Continue;
-        }
-
-        if (Config?.CommandsNextMap?.Contains(@event.Text.Trim()) == true)
-        {
-            var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-
-            foreach (var player in players)
-            {
-                if (Config?.EnableNextMapCommand != true)
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command.disabled"));
-                }
-                else
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue));
-                }
-            }
-        }
-
-        if (Config?.CommandsCurrentMap?.Contains(@event.Text.Trim()) == true)
-        {
-            var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-
-            foreach (var player in players)
-            {
-                if (Config?.EnableCurrentMapCommand != true)
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "currentmap.get.command.disabled"));
-                }
-                else
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "currentmap.get.command").Replace("{MAP_NAME}", Server.MapName));
-                }
-            }
-        }
-
-        if (Config?.CommandsTimeLeft?.Contains(@event.Text.Trim()) == true)
-        {
-            var gameRules = ServerUtils.GetGameRules();
-
-            var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-
-            foreach (var player in players)
-            {
-                if (Config?.EnableTimeLeftCommand != true)
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.disabled"));
-                }
-                else
-                {
-                    if(Config?.DependsOnTheRound == true && gameRules != null)
-                    {
-                        var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
-                        var roundLeft = maxRounds - gameRules.TotalRoundsPlayed;
-
-                        if(roundLeft > 0)
-                        {
-                            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.round").Replace("{TIME_LEFT}", roundLeft.ToString()));
-                        }
-                        else
-                        {
-                            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
-                        }
-                    }
-                    else if(Config?.DependsOnTheRound == true && gameRules == null)
-                    {
-                        player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.unavailable"));
-                    }
-                    else
-                    {
-                        var timeLeft = GlobalVariables.TimeLeft - GlobalVariables.CurrentTime;
-                        var minutes = Math.Ceiling(timeLeft / 60);
-
-                        if(minutes > 0)
-                        {
-                            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.timeleft").Replace("{TIME_LEFT}", minutes.ToString()));
-                        }
-                        else
-                        {
-                            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
-                        }
-                    }
-                }
-            }
-        }
-
-        if (Config?.CommandsLastMap?.Contains(@event.Text.Trim()) == true)
-        {
-            var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-
-            foreach (var player in players)
-            {
-                if (Config?.EnableLastMapCommand != true)
-                {
-                    player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command.disabled"));
-                }
-                else
-                {
-                    if(string.IsNullOrEmpty(GlobalVariables.LastMap))
-                    {
-                        player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command.null"));
-                    }
-                    else
-                    {
-                        player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command").Replace("{MAP_NAME}", GlobalVariables.LastMap));
-                    }
-                }
-            }
-        }
+        // Map info commands are now handled via attributes
 
         return HookResult.Continue;
     }
@@ -649,20 +501,18 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         // Define currentMap variable outside the if-else block
         Map? currentMap = null;
-        
-        // Skip empty map names
-        if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>" || Server.MapName == "\u003Cempty\u003E")
+
+        workShopID = "";
+
+        // First create a temporary config if needed, which will be updated once we have the workshop ID
+        if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
         {
-            Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
-        }
-        else
-        {
-            // Check if the current map has a config file, if not create one with default settings
+            // Check if the current map has a config file, if not create a temporary one
             currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
             if (currentMap == null)
             {
-                // Create default config for this map
-                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
+                // Create default config for this map (will be updated if it's a workshop map)
+                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName, false, "");
                 
                 // Add to global maps list if not already there
                 if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
@@ -676,6 +526,99 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                 }
             }
         }
+        else
+        {
+            Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
+        }
+
+        // Get workshop ID and update config after a delay to ensure the ID is available
+        AddTimer(1.0f, () =>
+        {
+            workShopID = GetAddonID();
+            if (!string.IsNullOrEmpty(workShopID))
+            {
+                string workshopUrl = $"https://steamcommunity.com/sharedfiles/filedetails/?id={workShopID}";
+                workShopURL = workshopUrl;
+                
+                // Update workshop mapping with the official map name
+                if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
+                {
+                    Utils.MapConfigManager.UpdateWorkshopMapping(workShopID, Server.MapName);
+                    
+                    // Merge any duplicate configs that might exist
+                    Utils.MapConfigManager.MergeWorkshopConfigs(workShopID, Server.MapName);
+                    
+                    Logger.LogInformation("Updated workshop mapping for ID {WorkshopId} to map name {MapName}", workShopID, Server.MapName);
+                    
+                    // Now that we have the workshop ID, update the map config if needed
+                    currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+                    
+                    if (currentMap == null)
+                    {
+                        // Create a workshop map config
+                        currentMap = new Map(
+                            mapValue: Server.MapName,
+                            mapDisplay: Server.MapName,
+                            mapIsWorkshop: true,
+                            mapWorkshopId: workShopID,
+                            mapCycleEnabled: true,
+                            mapCanVote: true,
+                            mapMinPlayers: 0,
+                            mapMaxPlayers: 64,
+                            mapCycleStartTime: "",
+                            mapCycleEndTime: "",
+                            mapCooldownCycles: 10
+                        );
+                        
+                        // Save the config
+                        Utils.MapConfigManager.SaveMapConfig(currentMap);
+                        
+                        // Add to global maps list
+                        if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+                        {
+                            GlobalVariables.Maps.Add(currentMap);
+                            if (currentMap.MapCycleEnabled)
+                            {
+                                GlobalVariables.CycleMaps.Add(currentMap);
+                            }
+                        }
+                        
+                        Logger.LogInformation("Created new workshop map config: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
+                    }
+                    else if (!currentMap.MapIsWorkshop || currentMap.MapWorkshopId != workShopID)
+                    {
+                        // If the map exists but is not marked as a workshop map or has a different workshop ID,
+                        // update the map to mark it as a workshop map with the correct ID
+                        Map updatedMap = new Map(
+                            mapValue: currentMap.MapValue,
+                            mapDisplay: currentMap.MapDisplay,
+                            mapIsWorkshop: true,
+                            mapWorkshopId: workShopID,
+                            mapCycleEnabled: currentMap.MapCycleEnabled,
+                            mapCanVote: currentMap.MapCanVote,
+                            mapMinPlayers: currentMap.MapMinPlayers,
+                            mapMaxPlayers: currentMap.MapMaxPlayers,
+                            mapCycleStartTime: currentMap.MapCycleStartTime,
+                            mapCycleEndTime: currentMap.MapCycleEndTime,
+                            mapCooldownCycles: currentMap.MapCooldownCycles
+                        );
+                        
+                        // Save the updated config
+                        Utils.MapConfigManager.SaveMapConfig(updatedMap);
+                        
+                        // Update in global maps list
+                        int index = GlobalVariables.Maps.FindIndex(m => m.MapValue == currentMap.MapValue);
+                        if (index >= 0)
+                        {
+                            GlobalVariables.Maps[index] = updatedMap;
+                            currentMap = updatedMap;
+                        }
+                        
+                        Logger.LogInformation("Updated existing map to mark as workshop map: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
+                    }
+                }
+            }
+        }, TimerFlags.STOP_ON_MAPCHANGE);
 
         // Decrease cooldown for all maps - this ensures we only decrease cooldowns when a map is actually loaded
         Utils.MapUtils.DecreaseCooldownForAllMaps();
@@ -687,8 +630,6 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             Utils.MapUtils.ResetMapCooldown(currentMap);
             Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);
         }
-
-        MapUtils.AutoSetNextMap();
 
         // Save cooldowns after map changes and cooldown updates
         Utils.CooldownManager.SaveCooldowns();
@@ -796,4 +737,213 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     //        }
     //    }
     //}
+    // Command registration using attributes
+
+    [ConsoleCommand("css_setnextmap", "Set a next map")]
+    [CommandHelper(minArgs: 1, usage: "[map]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [RequiresPermissions("@css/changemap")]
+    public void OnSetNextMapCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnSetNextMap(player, command);
+    }
+
+    [ConsoleCommand("css_maps", "List of all maps")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [RequiresPermissions("@css/changemap")]
+    public void OnMapsListCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnMapsList(player, command);
+    }
+
+    [ConsoleCommand("css_nominate", "Nominate a map for voting")]
+    [CommandHelper(usage: "[map]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    public void OnNominateCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnNominateMap(player, command);
+    }
+
+    [ConsoleCommand("css_nom", "Nominate a map for voting")]
+    [CommandHelper(usage: "[map]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    public void OnNomShortCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnNominateMap(player, command);
+    }
+
+    [ConsoleCommand("css_force_nominate", "Force nominate a map for voting (admin only)")]
+    [CommandHelper(usage: "[map]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [RequiresPermissions("@css/changemap")]
+    public void OnForceNominateCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnForceNominateMap(player, command);
+    }
+
+    [ConsoleCommand("css_force_nom", "Force nominate a map for voting (admin only)")]
+    [CommandHelper(usage: "[map]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [RequiresPermissions("@css/changemap")]
+    public void OnForceNomShortCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnForceNominateMap(player, command);
+    }
+
+    [ConsoleCommand("css_nomlist", "Show current map nominations")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    public void OnNomListCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        OnShowNominations(player, command);
+    }
+
+    [ConsoleCommand("css_rtv", "Rock the vote to change the map")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnRtvCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+
+        if (Config?.RtvEnable != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "rtv.disabled"));
+            return;
+        }
+
+        if (RtvUtils.CanPlayerRtv(player))
+        {
+            RtvUtils.AddPlayerRtv(player);
+        }
+        else
+        {
+            // Check why player can't RTV
+            float currentTime = (float)GlobalVariables.Timers.Elapsed.TotalSeconds;
+            if (currentTime - GlobalVariables.MapStartTime < Config.RtvDelay)
+            {
+                int remainingTime = (int)(Config.RtvDelay - (currentTime - GlobalVariables.MapStartTime));
+                player.PrintToChat(Localizer.ForPlayer(player, "rtv.too.early").Replace("{TIME}", remainingTime.ToString()));
+            }
+            else if (GlobalVariables.RtvPlayers.Contains(player.SteamID.ToString()))
+            {
+                player.PrintToChat(Localizer.ForPlayer(player, "rtv.already.voted"));
+            }
+            else if (GlobalVariables.IsVotingInProgress || GlobalVariables.VoteStarted)
+            {
+                player.PrintToChat(Localizer.ForPlayer(player, "rtv.vote.in.progress"));
+            }
+        }
+    }
+
+    [ConsoleCommand("css_nextmap", "Show the next map")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnNextMapCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+
+        if (Config?.EnableNextMapCommand != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command.disabled"));
+            return;
+        }
+
+        if (GlobalVariables.NextMap != null)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command").Replace("{MAP_NAME}", GlobalVariables.NextMap.MapValue));
+        }
+        else
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command.not.set"));
+        }
+    }
+
+    [ConsoleCommand("css_currentmap", "Show the current map")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnCurrentMapCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+
+        if (Config?.EnableCurrentMapCommand != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "currentmap.get.command.disabled"));
+            return;
+        }
+
+        player.PrintToChat(Localizer.ForPlayer(player, "currentmap.get.command").Replace("{MAP_NAME}", Server.MapName));
+    }
+
+    [ConsoleCommand("css_timeleft", "Show time left on the current map")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnTimeLeftCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+
+        if (Config?.EnableTimeLeftCommand != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.disabled"));
+            return;
+        }
+
+        var gameRules = ServerUtils.GetGameRules();
+
+        // Check if RTV has been triggered
+        if (GlobalVariables.RtvTriggered)
+        {
+            // If RTV has been triggered, inform the player that the map will change at the end of the round
+            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.rtv.triggered").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue ?? ""));
+        }
+        // Check if a vote has completed and next map is set, but not through RTV
+        else if (GlobalVariables.VotedForCurrentMap && GlobalVariables.NextMap != null)
+        {
+            // If a vote has completed through normal time-based voting, show the next map but don't imply immediate change
+            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.vote.completed").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue ?? ""));
+        }
+        else if(Config?.DependsOnTheRound == true && gameRules != null)
+        {
+            var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
+            var roundLeft = maxRounds - gameRules.TotalRoundsPlayed;
+
+            if(roundLeft > 0)
+            {
+                player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.round").Replace("{TIME_LEFT}", roundLeft.ToString()));
+            }
+            else
+            {
+                player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
+            }
+        }
+        else if(Config?.DependsOnTheRound == true && gameRules == null)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.unavailable"));
+        }
+        else
+        {
+            var timeLeft = GlobalVariables.TimeLeft - GlobalVariables.CurrentTime;
+            var minutes = Math.Ceiling(timeLeft / 60);
+
+            if(minutes > 0)
+            {
+                player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.timeleft").Replace("{TIME_LEFT}", minutes.ToString()));
+            }
+            else
+            {
+                player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
+            }
+        }
+    }
+
+    [ConsoleCommand("css_lastmap", "Show the last map played")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnLastMapCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+
+        if (Config?.EnableLastMapCommand != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command.disabled"));
+            return;
+        }
+
+        if(string.IsNullOrEmpty(GlobalVariables.LastMap))
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command.null"));
+        }
+        else
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command").Replace("{MAP_NAME}", GlobalVariables.LastMap));
+        }
+    }
 }
