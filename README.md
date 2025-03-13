@@ -419,6 +419,8 @@ Each map now has its own configuration file with the following options:
 
 The plugin now includes a sophisticated mapping system for Workshop maps that solves the problem of duplicate configurations caused by mismatches between Workshop titles and actual in-game map names.
 
+More detail is here: [duplicate_config_handling.md](duplicate_config_handling.md)
+
 #### How It Works
 
 1. **Automatic Detection**: When a Workshop map is loaded, the plugin automatically detects its Workshop ID and the actual in-game map name.

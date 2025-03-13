@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -694,6 +694,34 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         workShopID = "";
 
+        // First create a temporary config if needed, which will be updated once we have the workshop ID
+        if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
+        {
+            // Check if the current map has a config file, if not create a temporary one
+            currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            if (currentMap == null)
+            {
+                // Create default config for this map (will be updated if it's a workshop map)
+                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName, false, "");
+                
+                // Add to global maps list if not already there
+                if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+                {
+                    GlobalVariables.Maps.Add(currentMap);
+                    if (currentMap.MapCycleEnabled)
+                    {
+                        GlobalVariables.CycleMaps.Add(currentMap);
+                    }
+                    Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
+                }
+            }
+        }
+        else
+        {
+            Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
+        }
+
+        // Get workshop ID and update config after a delay to ensure the ID is available
         AddTimer(1.0f, () =>
         {
             workShopID = GetAddonID();
@@ -711,36 +739,76 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                     Utils.MapConfigManager.MergeWorkshopConfigs(workShopID, Server.MapName);
                     
                     Logger.LogInformation("Updated workshop mapping for ID {WorkshopId} to map name {MapName}", workShopID, Server.MapName);
+                    
+                    // Now that we have the workshop ID, update the map config if needed
+                    currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+                    
+                    if (currentMap == null)
+                    {
+                        // Create a workshop map config
+                        currentMap = new Map(
+                            mapValue: Server.MapName,
+                            mapDisplay: Server.MapName,
+                            mapIsWorkshop: true,
+                            mapWorkshopId: workShopID,
+                            mapCycleEnabled: true,
+                            mapCanVote: true,
+                            mapMinPlayers: 0,
+                            mapMaxPlayers: 64,
+                            mapCycleStartTime: "",
+                            mapCycleEndTime: "",
+                            mapCooldownCycles: 10
+                        );
+                        
+                        // Save the config
+                        Utils.MapConfigManager.SaveMapConfig(currentMap);
+                        
+                        // Add to global maps list
+                        if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+                        {
+                            GlobalVariables.Maps.Add(currentMap);
+                            if (currentMap.MapCycleEnabled)
+                            {
+                                GlobalVariables.CycleMaps.Add(currentMap);
+                            }
+                        }
+                        
+                        Logger.LogInformation("Created new workshop map config: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
+                    }
+                    else if (!currentMap.MapIsWorkshop || currentMap.MapWorkshopId != workShopID)
+                    {
+                        // If the map exists but is not marked as a workshop map or has a different workshop ID,
+                        // update the map to mark it as a workshop map with the correct ID
+                        Map updatedMap = new Map(
+                            mapValue: currentMap.MapValue,
+                            mapDisplay: currentMap.MapDisplay,
+                            mapIsWorkshop: true,
+                            mapWorkshopId: workShopID,
+                            mapCycleEnabled: currentMap.MapCycleEnabled,
+                            mapCanVote: currentMap.MapCanVote,
+                            mapMinPlayers: currentMap.MapMinPlayers,
+                            mapMaxPlayers: currentMap.MapMaxPlayers,
+                            mapCycleStartTime: currentMap.MapCycleStartTime,
+                            mapCycleEndTime: currentMap.MapCycleEndTime,
+                            mapCooldownCycles: currentMap.MapCooldownCycles
+                        );
+                        
+                        // Save the updated config
+                        Utils.MapConfigManager.SaveMapConfig(updatedMap);
+                        
+                        // Update in global maps list
+                        int index = GlobalVariables.Maps.FindIndex(m => m.MapValue == currentMap.MapValue);
+                        if (index >= 0)
+                        {
+                            GlobalVariables.Maps[index] = updatedMap;
+                            currentMap = updatedMap;
+                        }
+                        
+                        Logger.LogInformation("Updated existing map to mark as workshop map: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
+                    }
                 }
             }
         }, TimerFlags.STOP_ON_MAPCHANGE);
-        
-        // Skip empty map names
-        if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>" || Server.MapName == "\u003Cempty\u003E")
-        {
-            Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
-        }
-        else
-        {
-            // Check if the current map has a config file, if not create one with default settings
-            currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
-            if (currentMap == null)
-            {
-                // Create default config for this map
-                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName);
-                
-                // Add to global maps list if not already there
-                if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
-                {
-                    GlobalVariables.Maps.Add(currentMap);
-                    if (currentMap.MapCycleEnabled)
-                    {
-                        GlobalVariables.CycleMaps.Add(currentMap);
-                    }
-                    Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
-                }
-            }
-        }
 
         // Decrease cooldown for all maps - this ensures we only decrease cooldowns when a map is actually loaded
         Utils.MapUtils.DecreaseCooldownForAllMaps();
