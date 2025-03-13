@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using MapCycleAndChooser_COFYYE.Classes;
 using System.Text.Json.Serialization;
 
@@ -161,6 +161,12 @@ namespace MapCycleAndChooser_COFYYE.Config
 
         [JsonPropertyName("enable_map_cooldown")]
         public bool EnableMapCooldown { get; init; } = true;
+
+        [JsonPropertyName("enable_workshop_collection_sync")]
+        public bool EnableWorkshopCollectionSync { get; init; } = false;
+
+        [JsonPropertyName("workshop_collection_ids")]
+        public List<string> WorkshopCollectionIds { get; init; } = [];
 
         [JsonPropertyName("maps")]
         public List<Map> Maps { get; init; } = [];

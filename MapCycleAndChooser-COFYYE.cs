@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -11,6 +11,7 @@ using MapCycleAndChooser_COFYYE.Classes;
 using CounterStrikeSharp.API.Modules.Memory;
 using MapCycleAndChooser_COFYYE.Variables;
 using Menu;
+using System.Runtime.InteropServices;
 namespace MapCycleAndChooser_COFYYE;
 
 public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
@@ -19,9 +20,25 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     public override string ModuleVersion => "1.2";
     public override string ModuleAuthor => "cofyye";
     public override string ModuleDescription => "https://github.com/cofyye";
-
     public static MapCycleAndChooser Instance { get; set; } = new();
     public Config.Config Config { get; set; } = new();
+
+    public string workShopID = "";
+    public string workShopURL = "";
+
+    private delegate IntPtr GetAddonNameDelegate(IntPtr thisPtr);
+    private readonly ForceFullUpdate.INetworkServerService networkServerService = new();
+
+    public string GetAddonID()
+    {
+        IntPtr networkGameServer = networkServerService.GetIGameServer().Handle;
+        IntPtr vtablePtr = Marshal.ReadIntPtr(networkGameServer);
+        IntPtr functionPtr = Marshal.ReadIntPtr(vtablePtr + (25 * IntPtr.Size));
+        var getAddonName = Marshal.GetDelegateForFunctionPointer<GetAddonNameDelegate>(functionPtr);
+        IntPtr result = getAddonName(networkGameServer);
+        return Marshal.PtrToStringAnsi(result)!.Split(',')[0];
+    }
+
 
     public void OnConfigParsed(Config.Config config)
     {
@@ -60,6 +77,12 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
         // Load saved cooldowns from file
         Utils.CooldownManager.LoadCooldowns();
         Logger.LogInformation("Loaded map cooldowns from file.");
+        
+        // Sync Workshop collections if enabled
+        if (Config.EnableWorkshopCollectionSync)
+        {
+            Utils.WorkshopUtils.SyncWorkshopCollections();
+        }
     }
 
     public override void Load(bool hotReload)
@@ -649,6 +672,29 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
 
         // Define currentMap variable outside the if-else block
         Map? currentMap = null;
+
+        workShopID = "";
+
+        AddTimer(1.0f, () =>
+        {
+            workShopID = GetAddonID();
+            if (!string.IsNullOrEmpty(workShopID))
+            {
+                string workshopUrl = $"https://steamcommunity.com/sharedfiles/filedetails/?id={workShopID}";
+                workShopURL = workshopUrl;
+                
+                // Update workshop mapping with the official map name
+                if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
+                {
+                    Utils.MapConfigManager.UpdateWorkshopMapping(workShopID, Server.MapName);
+                    
+                    // Merge any duplicate configs that might exist
+                    Utils.MapConfigManager.MergeWorkshopConfigs(workShopID, Server.MapName);
+                    
+                    Logger.LogInformation("Updated workshop mapping for ID {WorkshopId} to map name {MapName}", workShopID, Server.MapName);
+                }
+            }
+        }, TimerFlags.STOP_ON_MAPCHANGE);
         
         // Skip empty map names
         if (string.IsNullOrWhiteSpace(Server.MapName) || Server.MapName == "<empty>" || Server.MapName == "\u003Cempty\u003E")

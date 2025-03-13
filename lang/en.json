@@ -65,5 +65,13 @@
   "nominate.current.entry": "{lightpurple}[MapInfo] {lime}{MAP_NAME} {yellow}(nominated by {lime}{PLAYER_NAME}{yellow})",
   "nominate.no.matches": "{lightpurple}[MapInfo] {yellow}No maps matching '{lime}{MAP_NAME}{yellow}' were found",
   "nominate.no.eligible.maps": "{lightpurple}[MapInfo] {yellow}There are no eligible maps to nominate at this time",
-  "nominate.failed": "{lightpurple}[MapInfo] {yellow}Failed to nominate {lime}{MAP_NAME}"
+  "nominate.failed": "{lightpurple}[MapInfo] {yellow}Failed to nominate {lime}{MAP_NAME}",
+
+  "workshop.collection.sync.started": "{lightpurple}[MapInfo] {yellow}Workshop collection sync started",
+  "workshop.collection.sync.completed": "{lightpurple}[MapInfo] {yellow}Workshop collection sync completed. Added {lime}{COUNT} {yellow}new maps",
+  "workshop.collection.added": "{lightpurple}[MapInfo] {yellow}Added Workshop collection {lime}{COLLECTION_ID} {yellow}to the list",
+  "workshop.collection.removed": "{lightpurple}[MapInfo] {yellow}Removed Workshop collection {lime}{COLLECTION_ID} {yellow}from the list",
+  "workshop.collection.already.exists": "{lightpurple}[MapInfo] {yellow}Workshop collection {lime}{COLLECTION_ID} {yellow}is already in the list",
+  "workshop.collection.not.found": "{lightpurple}[MapInfo] {yellow}Workshop collection {lime}{COLLECTION_ID} {yellow}is not in the list",
+  "workshop.collection.list.empty": "{lightpurple}[MapInfo] {yellow}No Workshop collections configured"
 }

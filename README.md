@@ -41,6 +41,7 @@ Join and experience this plugin, along with all the other custom plugins I creat
 - **Map Cooldowns**: Prevents the same maps from being played too frequently by setting a cooldown period in map cycles.
 - **Individual Map Configuration Files**: Each map now has its own configuration file for easier management.
 - **Map Nomination (`!nominate`)**: Allows players to nominate maps to be included in the next map vote.
+- **Workshop Map Mapping System**: Automatically maps Workshop map titles to their actual in-game names to prevent duplicate configurations.
 
 ## Screenshots
 
@@ -348,11 +349,21 @@ In version 1.2, the configuration system has been significantly improved:
 35. **`commands_css_nominations`**
     - **Possible Values**: List of strings
     - **Description**: Defines alias commands for `css_nominations`.
-
 36. **`sounds`**
    - **Possible Values**: An array of string paths to sound files.
    - **Description**: Specifies the sounds that play when map voting begins.
      - Add as many sounds as you'd like, and the plugin will play one randomly.
+     - Leave this field empty (`[]`) to disable sounds.
+
+37. **`enable_workshop_collection_sync`**
+   - **Possible Values**: `true`, `false`
+   - **Description**: Enables or disables automatic synchronization of maps from Steam Workshop collections.
+     - When enabled, the plugin will fetch maps from the specified Workshop collections and add them to your map pool.
+
+38. **`workshop_collection_ids`**
+   - **Possible Values**: List of strings (Workshop collection IDs)
+   - **Description**: List of Steam Workshop collection IDs to synchronize maps from.
+     - Example: `["123456789", "987654321"]`
      - Leave this field empty (`[]`) to disable sounds.
 
 ### Map Configuration Options
@@ -403,6 +414,28 @@ Each map now has its own configuration file with the following options:
     - **Description**: The number of map cycles that must pass before this map can be played again.
     - **Example**: If set to 2, the map will be unavailable for 2 map changes after it's played.
     - **Note**: Only applies when `enable_map_cooldown` is set to `true` in the main configuration.
+
+### Workshop Map Mapping System
+
+The plugin now includes a sophisticated mapping system for Workshop maps that solves the problem of duplicate configurations caused by mismatches between Workshop titles and actual in-game map names.
+
+#### How It Works
+
+1. **Automatic Detection**: When a Workshop map is loaded, the plugin automatically detects its Workshop ID and the actual in-game map name.
+
+2. **Mapping Storage**: This relationship is stored in a mapping file located at:
+  > game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/workshop_map_mapping.json
+
+3. **Configuration Consolidation**: If duplicate configurations exist (created from Workshop titles that differ from actual map names), the plugin automatically merges them into a single configuration using the official map name.
+
+4. **Workshop Collection Sync**: When synchronizing maps from Workshop collections, the plugin uses this mapping to ensure consistent configuration names.
+
+#### Benefits
+
+- **Prevents Duplicate Configurations**: No more duplicate config files for the same map.
+- **Consistent Map Names**: Uses the actual in-game map names for configurations.
+- **Automatic Management**: No manual intervention required - the system handles everything automatically.
+- **Preserves Settings**: When merging configurations, all settings from the original config are preserved.
 
 ### Installation
 

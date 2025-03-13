@@ -10,14 +10,17 @@ namespace MapCycleAndChooser_COFYYE.Utils
         private static readonly string PluginConfigPath = Path.Combine(Application.RootDirectory, "configs/plugins/MapCycleAndChooser-COFYYE");
         private static readonly string MapsDirectoryPath = Path.Combine(PluginConfigPath, "maps");
         private static readonly string DefaultMapConfigPath = Path.Combine(PluginConfigPath, "default_map_config.json");
+        private static readonly string WorkshopMappingPath = Path.Combine(PluginConfigPath, "workshop_map_mapping.json");
         private static readonly object FileLock = new();
         private static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
         private static Map? DefaultMapConfig = null;
+        private static Dictionary<string, string> WorkshopIdToMapName = new Dictionary<string, string>();
 
         static MapConfigManager()
         {
             EnsureDirectoryExists();
             LoadDefaultMapConfig();
+            LoadWorkshopMapping();
         }
 
         private static void EnsureDirectoryExists()
@@ -30,6 +33,48 @@ namespace MapCycleAndChooser_COFYYE.Utils
             if (!Directory.Exists(MapsDirectoryPath))
             {
                 Directory.CreateDirectory(MapsDirectoryPath);
+            }
+        }
+        
+        private static void LoadWorkshopMapping()
+        {
+            try
+            {
+                if (File.Exists(WorkshopMappingPath))
+                {
+                    string json = File.ReadAllText(WorkshopMappingPath);
+                    WorkshopIdToMapName = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+                    Instance?.Logger.LogInformation("Loaded workshop mapping from file. {Count} mappings found.", WorkshopIdToMapName.Count);
+                }
+                else
+                {
+                    WorkshopIdToMapName = new Dictionary<string, string>();
+                    SaveWorkshopMapping();
+                    Instance?.Logger.LogInformation("Created new workshop mapping file.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Instance?.Logger.LogError(ex, "Error loading workshop mapping.");
+                WorkshopIdToMapName = new Dictionary<string, string>();
+            }
+        }
+        
+        private static void SaveWorkshopMapping()
+        {
+            try
+            {
+                string json = JsonSerializer.Serialize(WorkshopIdToMapName, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                
+                File.WriteAllText(WorkshopMappingPath, json);
+                Instance?.Logger.LogInformation("Saved workshop mapping to file.");
+            }
+            catch (Exception ex)
+            {
+                Instance?.Logger.LogError(ex, "Error saving workshop mapping.");
             }
         }
         
@@ -299,6 +344,111 @@ namespace MapCycleAndChooser_COFYYE.Utils
             }
 
             return mapConfig;
+        }
+        
+        public static string? GetOfficialMapName(string workshopId)
+        {
+            if (WorkshopIdToMapName.TryGetValue(workshopId, out string? mapName))
+            {
+                return mapName;
+            }
+            return null;
+        }
+        
+        public static void UpdateWorkshopMapping(string workshopId, string mapName)
+        {
+            if (string.IsNullOrWhiteSpace(workshopId) || string.IsNullOrWhiteSpace(mapName))
+            {
+                Instance?.Logger.LogWarning("Attempted to update workshop mapping with empty workshopId or mapName. Skipping.");
+                return;
+            }
+            
+            WorkshopIdToMapName[workshopId] = mapName;
+            SaveWorkshopMapping();
+            Instance?.Logger.LogInformation("Updated workshop mapping: {WorkshopId} -> {MapName}", workshopId, mapName);
+        }
+        
+        public static void MergeWorkshopConfigs(string workshopId, string officialMapName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(workshopId) || string.IsNullOrWhiteSpace(officialMapName))
+                {
+                    Instance?.Logger.LogWarning("Attempted to merge workshop configs with empty workshopId or officialMapName. Skipping.");
+                    return;
+                }
+                
+                // Find all maps with the same workshop ID but different names
+                var maps = Variables.GlobalVariables.Maps
+                    .Where(m => m.MapIsWorkshop && m.MapWorkshopId == workshopId && m.MapValue != officialMapName)
+                    .ToList();
+                
+                if (maps.Count == 0)
+                {
+                    // No duplicate configs found
+                    return;
+                }
+                
+                Instance?.Logger.LogInformation("Found {Count} duplicate workshop map configs for ID {WorkshopId}", maps.Count, workshopId);
+                
+                // Check if the official map config already exists
+                var officialConfig = GetMapConfig(officialMapName);
+                
+                if (officialConfig == null)
+                {
+                    // Create a new config with the official map name using the first duplicate as a template
+                    var firstConfig = maps.First();
+                    Map newMap = new Map(
+                        mapValue: officialMapName,
+                        mapDisplay: firstConfig.MapDisplay,
+                        mapIsWorkshop: true,
+                        mapWorkshopId: workshopId,
+                        mapCycleEnabled: firstConfig.MapCycleEnabled,
+                        mapCanVote: firstConfig.MapCanVote,
+                        mapMinPlayers: firstConfig.MapMinPlayers,
+                        mapMaxPlayers: firstConfig.MapMaxPlayers,
+                        mapCycleStartTime: firstConfig.MapCycleStartTime,
+                        mapCycleEndTime: firstConfig.MapCycleEndTime,
+                        mapCooldownCycles: firstConfig.MapCooldownCycles
+                    );
+                    
+                    // Save the new config
+                    SaveMapConfig(newMap);
+                    
+                    // Add to global maps list
+                    Variables.GlobalVariables.Maps.Add(newMap);
+                    if (newMap.MapCycleEnabled)
+                    {
+                        Variables.GlobalVariables.CycleMaps.Add(newMap);
+                    }
+                    
+                    Instance?.Logger.LogInformation("Created new map config with official name: {OfficialMapName}", officialMapName);
+                }
+                
+                // Delete the duplicate config files
+                foreach (var map in maps)
+                {
+                    string mapFilePath = Path.Combine(MapsDirectoryPath, $"{map.MapValue}.json");
+                    if (File.Exists(mapFilePath))
+                    {
+                        File.Delete(mapFilePath);
+                        Instance?.Logger.LogInformation("Deleted duplicate map config file: {MapFile}", mapFilePath);
+                    }
+                    
+                    // Remove from global maps list
+                    Variables.GlobalVariables.Maps.Remove(map);
+                    Variables.GlobalVariables.CycleMaps.Remove(map);
+                }
+                
+                // Refresh the cycle maps list
+                Variables.GlobalVariables.CycleMaps = Variables.GlobalVariables.Maps.Where(map => map.MapCycleEnabled).ToList();
+                
+                Instance?.Logger.LogInformation("Successfully merged workshop map configs for ID {WorkshopId}", workshopId);
+            }
+            catch (Exception ex)
+            {
+                Instance?.Logger.LogError(ex, "Error merging workshop configs for ID {WorkshopId}", workshopId);
+            }
         }
     }
 }
