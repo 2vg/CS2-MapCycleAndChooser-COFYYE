@@ -946,4 +946,34 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
             player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command").Replace("{MAP_NAME}", GlobalVariables.LastMap));
         }
     }
+    
+    [ConsoleCommand("css_force_rtv", "Force Rock the Vote to change the map (admin only)")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [RequiresPermissions("@css/changemap")]
+    public void OnForceRtvCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+        
+        if (Config?.RtvEnable != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "rtv.force.disabled"));
+            return;
+        }
+        
+        if (GlobalVariables.IsVotingInProgress || GlobalVariables.VoteStarted)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "rtv.vote.in.progress"));
+            return;
+        }
+        
+        // Notify all players that an admin has forced RTV
+        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p));
+        foreach (var p in players)
+        {
+            p.PrintToChat(Localizer.ForPlayer(p, "rtv.force.success").Replace("{ADMIN_NAME}", player.PlayerName));
+        }
+        
+        // Start RTV process
+        RtvUtils.StartRtv();
+    }
 }

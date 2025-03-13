@@ -51,6 +51,8 @@
   "rtv.player.added": "{lightpurple}[MapInfo] {yellow}Player {lime}{PLAYER_NAME} {yellow}wants to change the map ({lime}{CURRENT}/{REQUIRED})",
   "rtv.started": "{lightpurple}[MapInfo] {yellow}Rock The Vote has been triggered. Vote for the next map!",
   "rtv.using.nextmap": "{lightpurple}[MapInfo] {yellow}Rock The Vote has been triggered. Next map will be {lime}{MAP_NAME}",
+  "rtv.force.success": "{lightpurple}[MapInfo] {yellow}Admin {lime}{ADMIN_NAME} {yellow}has forced Rock The Vote",
+  "rtv.force.disabled": "{lightpurple}[MapInfo] {yellow}Rock The Vote is currently {lightred}disabled",
   "vote.tie.random": "{lightpurple}[MapInfo] {yellow}Vote ended in a tie. Randomly selected: {lime}{MAP_NAME}",
   "vote.ignore.random": "{lightpurple}[MapInfo] {yellow}Ignore Vote option won. Selecting a random map.",
 
