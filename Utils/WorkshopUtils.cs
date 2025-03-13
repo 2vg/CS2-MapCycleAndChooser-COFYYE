@@ -9,7 +9,7 @@ namespace Mappen.Utils
 {
     public static class WorkshopUtils
     {
-        private static readonly HttpClient httpClient = new HttpClient();
+        private static readonly HttpClient httpClient = new HttpClient() { Timeout = TimeSpan.FromSeconds(10) };
         private static Mappen Instance => Mappen.Instance;
 
         /// <summary>
