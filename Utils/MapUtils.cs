@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Cvars;
@@ -253,70 +253,6 @@ namespace MapCycleAndChooser_COFYYE.Utils
             {
                 Instance?.Logger.LogError(ex, "Error determining winning map");
                 return (null, "error");
-            }
-        }
-
-        public static void AutoSetNextMap()
-        {
-            if (GlobalVariables.CycleMaps.Count > 0)
-            {
-                var enableMapCooldown = Instance?.Config?.EnableMapCooldown == true;
-                
-                if (Instance?.Config?.EnableRandomNextMap == true)
-                {
-                    // Filter maps with no cooldown if enabled
-                    var eligibleMaps = enableMapCooldown
-                        ? GlobalVariables.CycleMaps.Where(map => CooldownManager.GetMapCooldown(map.MapValue) <= 0).ToList()
-                        : GlobalVariables.CycleMaps;
-                    
-                    // If no maps are eligible due to cooldowns, use all maps
-                    if (eligibleMaps.Count == 0 && enableMapCooldown)
-                    {
-                        eligibleMaps = GlobalVariables.CycleMaps;
-                    }
-                    
-                    GlobalVariables.NextMap = eligibleMaps[new Random().Next(eligibleMaps.Count)];
-                }
-                else
-                {
-                    if (GlobalVariables.NextMapIndex > GlobalVariables.CycleMaps.Count - 1)
-                    {
-                        GlobalVariables.NextMapIndex = 0;
-                    }
-                    
-                    // If cooldown is enabled, find the next map with no cooldown
-                    if (enableMapCooldown)
-                    {
-                        int startIndex = GlobalVariables.NextMapIndex;
-                        bool foundEligibleMap = false;
-                        
-                        // Try to find a map with no cooldown
-                        while (!foundEligibleMap)
-                        {
-                            if (CooldownManager.GetMapCooldown(GlobalVariables.CycleMaps[GlobalVariables.NextMapIndex].MapValue) <= 0)
-                            {
-                                foundEligibleMap = true;
-                            }
-                            else
-                            {
-                                GlobalVariables.NextMapIndex = (GlobalVariables.NextMapIndex + 1) % GlobalVariables.CycleMaps.Count;
-                                
-                                // If we've checked all maps and none are eligible, use the original next map
-                                if (GlobalVariables.NextMapIndex == startIndex)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    GlobalVariables.NextMap = GlobalVariables.CycleMaps[GlobalVariables.NextMapIndex];
-                    GlobalVariables.NextMapIndex = (GlobalVariables.NextMapIndex + 1) % GlobalVariables.CycleMaps.Count;
-                }
-            }
-            else
-            {
-                GlobalVariables.NextMap = new Map(Server.MapName, Server.MapName, false, "", false, false, 0, 64, "", "");
             }
         }
         

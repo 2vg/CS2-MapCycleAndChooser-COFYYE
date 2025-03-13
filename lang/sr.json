@@ -2,6 +2,7 @@
   "nextmap.get.command": "{lightpurple}[MapInfo] {yellow}Sledeca mapa {orange}➤➤ {lime}{MAP_NAME}",
   "nextmap.get.command.info": "{lightpurple}[MapInfo] {yellow}Da vidis koja je sledeca mapa, kucaj {lime}!nextmap",
   "nextmap.get.command.disabled": "{lightpurple}[MapInfo] {yellow}Ova komanda trenutno nije dostupna",
+  "nextmap.get.command.not.set": "{lightpurple}[MapInfo] {yellow}Sledeca mapa {orange}➤➤ {yellow}Jos nije odredjena. Bice odredjena glasanjem ili RTV",
   "nextmap.set.command.expected.value": "{lightpurple}[MapInfo] {yellow}Ocekivana vrednost: {orange}css_nextmap {lime}[map]",
   "nextmap.set.command.new.map": "{lightpurple}[MapInfo] {yellow}Admin {lime}{ADMIN_NAME} {yellow}je postavio novu mapu {lime}{MAP_NAME}",
 
@@ -19,6 +20,8 @@
   "timeleft.get.command.expired": "{lightpurple}[MapInfo] {yellow}Preostalo Vreme {orange}➤➤ {yellow}Vreme je isteklo",
   "timeleft.get.command.info": "{lightpurple}[MapInfo] {yellow}Da vidis preostalo vreme, kucaj {lime}!timeleft",
   "timeleft.get.command.disabled": "{lightpurple}[MapInfo] {yellow}Ova komanda trenutno nije dostupna",
+  "timeleft.get.command.rtv.triggered": "{lightpurple}[MapInfo] {yellow}Preostalo Vreme {orange}➤➤ {yellow}Mapa ce se promeniti na {lime}{MAP_NAME} {yellow}na kraju ove runde",
+  "timeleft.get.command.vote.completed": "{lightpurple}[MapInfo] {yellow}Preostalo Vreme {orange}➤➤ {yellow}Sledeca mapa ce biti {lime}{MAP_NAME}",
 
   "admin.change.map": "{lightpurple}[MapInfo] {yellow}Admin {lime}{PLAYER_NAME} {yellow}je promenio mapu na {lime}{MAP_NAME}",
   "map.not.found": "{lightpurple}[MapInfo] {yellow}Mapa nije pronadjena",

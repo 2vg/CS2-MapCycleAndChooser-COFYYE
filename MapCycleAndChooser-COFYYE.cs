@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -89,7 +89,7 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
     {
         base.Load(hotReload);
 
-        AddCommand("css_nextmap", "Set a next map", OnSetNextMap);
+        AddCommand("css_setnextmap", "Set a next map", OnSetNextMap);
         AddCommand("css_maps", "List of all maps", OnMapsList);
         
         // Add nominate commands
@@ -547,7 +547,14 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                 }
                 else
                 {
-                    player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue));
+                    if (GlobalVariables.NextMap != null)
+                    {
+                        player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command").Replace("{MAP_NAME}", GlobalVariables.NextMap.MapValue));
+                    }
+                    else
+                    {
+                        player.PrintToChat(Localizer.ForPlayer(player, "nextmap.get.command.not.set"));
+                    }
                 }
             }
         }
@@ -583,7 +590,19 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
                 }
                 else
                 {
-                    if(Config?.DependsOnTheRound == true && gameRules != null)
+                    // Check if RTV has been triggered
+                    if (GlobalVariables.RtvTriggered)
+                    {
+                        // If RTV has been triggered, inform the player that the map will change at the end of the round
+                        player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.rtv.triggered").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue ?? ""));
+                    }
+                    // Check if a vote has completed and next map is set, but not through RTV
+                    else if (GlobalVariables.VotedForCurrentMap && GlobalVariables.NextMap != null)
+                    {
+                        // If a vote has completed through normal time-based voting, show the next map but don't imply immediate change
+                        player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.vote.completed").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue ?? ""));
+                    }
+                    else if(Config?.DependsOnTheRound == true && gameRules != null)
                     {
                         var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
                         var roundLeft = maxRounds - gameRules.TotalRoundsPlayed;
@@ -733,8 +752,6 @@ public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
             Utils.MapUtils.ResetMapCooldown(currentMap);
             Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);
         }
-
-        MapUtils.AutoSetNextMap();
 
         // Save cooldowns after map changes and cooldown updates
         Utils.CooldownManager.SaveCooldowns();

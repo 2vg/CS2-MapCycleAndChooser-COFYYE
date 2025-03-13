@@ -83,6 +83,7 @@ namespace MapCycleAndChooser_COFYYE.Utils
         /// <returns>True if the nextmap was respected and used, false otherwise.</returns>
         private static bool HandleRespectNextmap()
         {
+            // Only respect nextmap if it was explicitly set (not auto-set at map start)
             if (Instance.Config.RtvRespectNextmap && GlobalVariables.NextMap != null)
             {
                 // Use the already set nextmap without voting

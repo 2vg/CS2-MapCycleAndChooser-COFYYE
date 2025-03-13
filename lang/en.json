@@ -2,6 +2,7 @@
   "nextmap.get.command": "{lightpurple}[MapInfo] {yellow}Next Map {orange}➤➤ {lime}{MAP_NAME}",
   "nextmap.get.command.info": "{lightpurple}[MapInfo] {yellow}If you want to see what the next map is, say {lime}!nextmap",
   "nextmap.get.command.disabled": "{lightpurple}[MapInfo] {yellow}The next map command is currently {lightred}disabled",
+  "nextmap.get.command.not.set": "{lightpurple}[MapInfo] {yellow}Next Map {orange}➤➤ {yellow}Not yet determined. It will be set by voting or RTV",
   "nextmap.set.command.expected.value": "{lightpurple}[MapInfo] {yellow}Expected value: {orange}css_nextmap {lime}[map]",
   "nextmap.set.command.new.map": "{lightpurple}[MapInfo] {yellow}Admin {lime}{ADMIN_NAME} {yellow}changed the following map to {lime}{MAP_NAME}",
 
@@ -19,6 +20,8 @@
   "timeleft.get.command.expired": "{lightpurple}[MapInfo] {yellow}Time Left {orange}➤➤ {yellow}The time has expired",
   "timeleft.get.command.info": "{lightpurple}[MapInfo] {yellow}If you want to see the time left, say {lime}!timeleft",
   "timeleft.get.command.disabled": "{lightpurple}[MapInfo] {yellow}The time left command is currently {lightred}disabled",
+  "timeleft.get.command.rtv.triggered": "{lightpurple}[MapInfo] {yellow}Time Left {orange}➤➤ {yellow}Map will change to {lime}{MAP_NAME} {yellow}at the end of this round",
+  "timeleft.get.command.vote.completed": "{lightpurple}[MapInfo] {yellow}Time Left {orange}➤➤ {yellow}Next map will be {lime}{MAP_NAME}",
 
   "admin.change.map": "{lightpurple}[MapInfo] {yellow}Admin {lime}{PLAYER_NAME} {yellow}changed the map to {lime}{MAP_NAME}",
   "map.not.found": "{lightpurple}[MapInfo] {yellow}Map not found",

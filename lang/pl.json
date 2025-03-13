@@ -2,6 +2,7 @@
   "nextmap.get.command": "{lightpurple}[MapInfo] {yellow}Następna mapa {orange}➤➤ {lime}{MAP_NAME}",
   "nextmap.get.command.info": "{lightpurple}[MapInfo] {yellow}Jeśli chcesz zobaczyć, jaka będzie następna mapa, wpisz {lime}!nextmap",
   "nextmap.get.command.disabled": "{lightpurple}[MapInfo] {yellow}Komenda następnej mapy jest obecnie {lightred}wyłączona",
+  "nextmap.get.command.not.set": "{lightpurple}[MapInfo] {yellow}Następna mapa {orange}➤➤ {yellow}Jeszcze nie określona. Zostanie ustalona przez głosowanie lub RTV",
   "nextmap.set.command.expected.value": "{lightpurple}[MapInfo] {yellow}Oczekiwana wartość: {orange}css_nextmap {lime}[mapa]",
   "nextmap.set.command.new.map": "{lightpurple}[MapInfo] {yellow}Administrator {lime}{ADMIN_NAME} {yellow}zmienił następną mapę na {lime}{MAP_NAME}",
 
@@ -19,6 +20,8 @@
   "timeleft.get.command.expired": "{lightpurple}[MapInfo] {yellow}Pozostały czas {orange}➤➤ {yellow}Czas dobiegł końca",
   "timeleft.get.command.info": "{lightpurple}[MapInfo] {yellow}Jeśli chcesz zobaczyć pozostały czas, wpisz {lime}!timeleft",
   "timeleft.get.command.disabled": "{lightpurple}[MapInfo] {yellow}Komenda pozostałego czasu jest obecnie {lightred}wyłączona",
+  "timeleft.get.command.rtv.triggered": "{lightpurple}[MapInfo] {yellow}Pozostały czas {orange}➤➤ {yellow}Mapa zmieni się na {lime}{MAP_NAME} {yellow}na końcu tej rundy",
+  "timeleft.get.command.vote.completed": "{lightpurple}[MapInfo] {yellow}Pozostały czas {orange}➤➤ {yellow}Następna mapa będzie {lime}{MAP_NAME}",
 
   "admin.change.map": "{lightpurple}[MapInfo] {yellow}Administrator {lime}{PLAYER_NAME} {yellow}zmienił mapę na {lime}{MAP_NAME}",
   "map.not.found": "{lightpurple}[MapInfo] {yellow}Nie znaleziono mapy",
