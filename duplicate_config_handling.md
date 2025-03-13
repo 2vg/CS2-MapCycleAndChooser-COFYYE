@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MapCycleAndChooser-COFYYE plugin has improved the handling of duplicate configuration files for Workshop maps. This document explains how this process works.
+The Mappen plugin has improved the handling of duplicate configuration files for Workshop maps. This document explains how this process works.
 
 ## Duplicate Configuration File Processing
 

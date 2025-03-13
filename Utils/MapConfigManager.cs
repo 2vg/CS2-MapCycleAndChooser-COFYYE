@@ -1,18 +1,18 @@
 using System.Text.Json;
 using CounterStrikeSharp.API.Core;
-using MapCycleAndChooser_COFYYE.Classes;
+using Mappen.Classes;
 using Microsoft.Extensions.Logging;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class MapConfigManager
     {
-        private static readonly string PluginConfigPath = Path.Combine(Application.RootDirectory, "configs/plugins/MapCycleAndChooser-COFYYE");
+        private static readonly string PluginConfigPath = Path.Combine(Application.RootDirectory, "configs/plugins/Mappen");
         private static readonly string MapsDirectoryPath = Path.Combine(PluginConfigPath, "maps");
         private static readonly string DefaultMapConfigPath = Path.Combine(PluginConfigPath, "default_map_config.json");
         private static readonly string WorkshopMappingPath = Path.Combine(PluginConfigPath, "workshop_map_mapping.json");
         private static readonly object FileLock = new();
-        private static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        private static Mappen Instance => Mappen.Instance;
         private static Map? DefaultMapConfig = null;
         private static Dictionary<string, string> WorkshopIdToMapName = new Dictionary<string, string>();
 

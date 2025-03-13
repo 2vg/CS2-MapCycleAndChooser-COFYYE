@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
+﻿﻿sing CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -8,21 +8,21 @@ using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
-using MapCycleAndChooser_COFYYE.Utils;
-using MapCycleAndChooser_COFYYE.Classes;
+using Mappen.Utils;
+using Mappen.Classes;
 using CounterStrikeSharp.API.Modules.Memory;
-using MapCycleAndChooser_COFYYE.Variables;
+using Mappen.Variables;
 using Menu;
 using System.Runtime.InteropServices;
-namespace MapCycleAndChooser_COFYYE;
+namespace Mappen;
 
-public class MapCycleAndChooser : BasePlugin, IPluginConfig<Config.Config>
+public class Mappen : BasePlugin, IPluginConfig<Config.Config>
 {
     public override string ModuleName => "Map Cycle and Chooser";
-    public override string ModuleVersion => "1.2";
-    public override string ModuleAuthor => "cofyye";
-    public override string ModuleDescription => "https://github.com/cofyye";
-    public static MapCycleAndChooser Instance { get; set; } = new();
+    public override string ModuleVersion => "2.0";
+    public override string ModuleAuthor => "cofyye, 2vg";
+    public override string ModuleDescription => "https://github.com/2vg";
+    public static Mappen Instance { get; set; } = new();
     public Config.Config Config { get; set; } = new();
 
     public string workShopID = "";

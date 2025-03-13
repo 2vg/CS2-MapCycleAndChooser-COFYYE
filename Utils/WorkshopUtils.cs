@@ -2,15 +2,15 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using MapCycleAndChooser_COFYYE.Classes;
+using Mappen.Classes;
 using Microsoft.Extensions.Logging;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class WorkshopUtils
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        private static Mappen Instance => Mappen.Instance;
 
         /// <summary>
         /// Synchronizes maps from Steam Workshop collections

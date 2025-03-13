@@ -1,8 +1,8 @@
-﻿﻿﻿﻿﻿﻿using CounterStrikeSharp.API.Core;
-using MapCycleAndChooser_COFYYE.Classes;
+﻿﻿sing CounterStrikeSharp.API.Core;
+using Mappen.Classes;
 using System.Text.Json.Serialization;
 
-namespace MapCycleAndChooser_COFYYE.Config
+namespace Mappen.Config
 {
     public class Config : BasePluginConfig
     {

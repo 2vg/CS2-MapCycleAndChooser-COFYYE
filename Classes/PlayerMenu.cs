@@ -1,4 +1,4 @@
-﻿namespace MapCycleAndChooser_COFYYE.Classes
+﻿namespace Mappen.Classes
 {
     public class PlayerMenu
     {

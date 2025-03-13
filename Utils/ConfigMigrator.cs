@@ -4,14 +4,14 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace MapCycleAndChooser_COFYYE.Utils
+namespace Mappen.Utils
 {
     public static class ConfigMigrator
     {
         // Reference to centralized version info
         public static int latestVersion => Config.VersionInfo.CurrentConfigVersion;
-        private static readonly string ConfigBackupDir = Path.Combine(Application.RootDirectory, "configs/plugins/MapCycleAndChooser-COFYYE/backups");
-        private static MapCycleAndChooser Instance => MapCycleAndChooser.Instance;
+        private static readonly string ConfigBackupDir = Path.Combine(Application.RootDirectory, "configs/plugins/Mappen/backups");
+        private static Mappen Instance => Mappen.Instance;
 
         static ConfigMigrator()
         {
@@ -109,8 +109,8 @@ namespace MapCycleAndChooser_COFYYE.Utils
                 // but we explicitly save it to ensure the migrated config is saved
                 string configPath = Path.Combine(
                     Application.RootDirectory,
-                    "configs/plugins/MapCycleAndChooser-COFYYE",
-                    "MapCycleAndChooser-COFYYE.json");
+                    "configs/plugins/Mappen",
+                    "Mappen.json");
 
                 string json = JsonSerializer.Serialize(config, new JsonSerializerOptions
                 {

@@ -1,21 +1,17 @@
-# MapCycleAndChooser
-
-## 📊 Plugin Statistics  
-
-<p align="center">
-  <img src="https://img.shields.io/github/downloads/cofyye/CS2-MapCycleAndChooser-COFYYE/total" alt="Total Downloads">
-  <img src="https://img.shields.io/github/stars/cofyye/CS2-MapCycleAndChooser-COFYYE" alt="GitHub Stars">
-  <img src="https://img.shields.io/github/last-commit/cofyye/CS2-MapCycleAndChooser-COFYYE" alt="Last Update">
-  <img src="https://img.shields.io/github/issues/cofyye/CS2-MapCycleAndChooser-COFYYE" alt="Open Issues">
-</p>
+# Mappen
 
 ## 📌 Overview  
-MapCycleAndChooser is a CS2 plugin designed to give server admins complete control over map rotations and player interactions. With this plugin, you can manage map cycles, enable map voting, and customize various settings to optimize gameplay for all players.
+Mappen is a map cycle management plugin on the CS2 server, based on [cofyye/CS2-MapCycleAndChooser-COFYYE](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE) with a lot of modifications and improvements.
 
-## See it in action
-You can check out the plugin live on my server:  
-**IP**: 198.186.131.31:27015  
-Join and experience this plugin, along with all the other custom plugins I create for a unique gameplay experience.
+The idea behind Mappen is to reduce the complexity of management.
+
+It is implemented to automatically create any configuration files and automatically migrate old settings.
+
+## What "Mappen" meaning
+
+The original plugin author's(cofyye) icon was a penguin, so I just combined `Map` and `Pen`guin.
+
+I also prefer short words in project names.
 
 ## Features
 
@@ -31,43 +27,17 @@ Join and experience this plugin, along with all the other custom plugins I creat
 - **Vote Start Sound**: Play a sound when the voting for a new map begins.
 - **Ignore Option**: Players can now choose to ignore the current vote.
 - **Extend Map Option**: Allows players to vote to extend the current map instead of switching to a new one.
-- **Timeleft Command (`!timeleft`)**: Displays the remaining time before the map changes.
-- **Current Map Command (`!currentmap`)**: Shows the name of the map currently being played.
-- **Last Map Command (`!lastmap`)**: Displays the previously played map.
+- **Timeleft Command**: Displays the remaining time before the map changes.
+- **Current Map Command**: Shows the name of the map currently being played.
+- **Last Map Command**: Displays the previously played map.
 - **Map Change Delay**: Configurable delay after the current map ends before the next map loads.
 - **Vote Trigger Time**: Set how long before the end of the map the voting process should start.
 - **Command Aliases**: Each command can have multiple aliases for easier accessibility.
-- **Rock The Vote (`!rtv`)**: Allows players to vote to change the map before the end of the current map.
+- **Rock The Vote**: Allows players to vote to change the map before the end of the current map.
 - **Map Cooldowns**: Prevents the same maps from being played too frequently by setting a cooldown period in map cycles.
 - **Individual Map Configuration Files**: Each map now has its own configuration file for easier management.
-- **Map Nomination (`!nominate`)**: Allows players to nominate maps to be included in the next map vote.
+- **Map Nomination**: Allows players to nominate maps to be included in the next map vote.
 - **Workshop Map Mapping System**: Automatically maps Workshop map titles to their actual in-game names to prevent duplicate configurations.
-
-## Screenshots
-
-1. **`!nextmap` Command in Chat**: Displays the next map when the `!nextmap` command is typed in chat.
-
-   ![Nextmap Command](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/nextmap.png?raw=true)
-
-2. **Start of Map Voting**: Displays when a map vote begins.
-
-   ![Map Voting Start](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/votemap1.png?raw=true)
-
-3. **Voting Percentage After Map Selection**: Shows the percentage of votes for each map.
-
-   ![Voting Percentage](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/votemap2.png?raw=true)
-
-4. **Player Voting Logs**: Shows logs of which players voted for which maps and the next map.
-
-   ![Player Voting Logs](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/votemap3.png?raw=true)
-
-5. **Admin Map List**: Displays the map list that the admin can access and modify.
-
-   ![Admin Map List](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/maps_menu.png?raw=true)
-
-6. **Support for Local Language Change**: Demonstrates the plugin's support for language customization.
-
-   ![Language Support](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/blob/resources/changed_language.png?raw=true)
 
 ## Dependencies
 
@@ -82,6 +52,7 @@ To run this plugin, you need the following dependencies:
 3. **MultiAddonManager** *(optional)*  
    Download from: [MultiAddonManager GitHub Releases](https://github.com/Source2ZE/MultiAddonManager/releases)  
 
+   **※ ↓ This settngs will be changed in the future. ↓**
    - If you want to play a sound when map voting begins, this dependency is required. You can use your own custom sounds, though no tutorial is provided. Search online for guidance.  
    - Alternatively, if you'd like to use pre-configured sounds, visit this link: [Steam Workshop Sounds](https://steamcommunity.com/sharedfiles/filedetails/?id=3420306144).  
 
@@ -172,9 +143,9 @@ These commands can be used in the console and are registered using attributes:
     - **Description**: Console command to show the last map played.
     - **Access**: Available to all players.
 
-## What's New in v1.2
+## What's New in v2.0
 
-Version 1.2 includes several significant improvements:
+Version 2.0 includes several significant improvements:
 
 ### Command Registration System Refactoring
 
@@ -199,19 +170,19 @@ The configuration system has been significantly enhanced for better organization
 
 ## Configuration Tutorial
 
-Below is a step-by-step guide explaining the available configuration options for **MapCycleAndChooser**. These options allow you to customize how the plugin behaves and interacts with players.
+Below is a step-by-step guide explaining the available configuration options for **Mappen**. These options allow you to customize how the plugin behaves and interacts with players.
 
 ### Configuration File Structure Changes
 
-In version 1.2, the configuration system has been significantly improved:
+In version 2.0, the configuration system has been significantly improved:
 
 1. **Individual Map Configuration Files**:
-   - Each map now has its own configuration file located in `game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/maps/`.
+   - Each map now has its own configuration file located in `game/csgo/addons/counterstrikesharp/configs/plugins/Mappen/maps/`.
    - Files are named after the map (e.g., `de_dust2.json`).
    - This makes it easier to manage settings for individual maps without editing a large configuration file.
 
 2. **Default Map Template**:
-   - A default map configuration template is stored at `game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/default_map_config.json`.
+   - A default map configuration template is stored at `game/csgo/addons/counterstrikesharp/configs/plugins/Mappen/default_map_config.json`.
    - This template is used when creating configuration files for new maps.
    - default template:
      ```jsonc
@@ -231,7 +202,7 @@ In version 1.2, the configuration system has been significantly improved:
      ```
 
 3. **Cooldown System**:
-   - Map cooldowns are stored in `game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/cooldowns.json`.
+   - Map cooldowns are stored in `game/csgo/addons/counterstrikesharp/configs/plugins/Mappen/cooldowns.json`.
 
 4. **Automatic Migration**:
    - When upgrading from v1.1, your existing map configurations will be automatically migrated to individual files.
@@ -447,7 +418,7 @@ More detail is here: [duplicate_config_handling.md](duplicate_config_handling.md
 1. **Automatic Detection**: When a Workshop map is loaded, the plugin automatically detects its Workshop ID and the actual in-game map name.
 
 2. **Mapping Storage**: This relationship is stored in a mapping file located at:
-  > game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/workshop_map_mapping.json
+  > game/csgo/addons/counterstrikesharp/configs/plugins/Mappen/workshop_map_mapping.json
 
 3. **Configuration Consolidation**: If duplicate configurations exist (created from Workshop titles that differ from actual map names), the plugin automatically merges them into a single configuration using the official map name.
 
@@ -462,17 +433,19 @@ More detail is here: [duplicate_config_handling.md](duplicate_config_handling.md
 
 ### Installation
 
-1. Download the **[MapCycleAndChooser v1.2](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/releases/download/1.2/MapCycleAndChooser-COFYYE-v1.2.zip)** plugin as a `.zip` file.  
+※ There is no release yet.
+
+1. Download the **[Mappen v2.0](https://github.com/2vg/Mappen/releases/download/2.0/Mappen-v2.0.zip)** plugin as a `.zip` file.  
 2. Upload the contents of the `.zip` file into the following directory on your server:  
    > game/csgo/addons/counterstrikesharp/plugins  
 3. After uploading, change the map or restart your server to activate the plugin.  
 4. The configuration files will be generated at:  
-   > game/csgo/addons/counterstrikesharp/configs/plugins/MapCycleAndChooser-COFYYE/  
+   > game/csgo/addons/counterstrikesharp/configs/plugins/Mappen/  
    Adjust all settings in these files as needed.
 
 ### Language Support
 The language files are located in the following directory:
-> game/csgo/addons/counterstrikesharp/plugins/MapCycleAndChooser-COFYYE/lang
+> game/csgo/addons/counterstrikesharp/plugins/Mappen/lang
 
 Currently, there are three language files:
 - `en.json` (English)
@@ -481,7 +454,7 @@ Currently, there are three language files:
 
 ## Bug Reports & Suggestions
 
-If you encounter any bugs or issues while using the plugin, please report them on the [GitHub Issues page](https://github.com/cofyye/CS2-MapCycleAndChooser-COFYYE/issues). Provide a detailed description of the problem, and I will work on resolving it as soon as possible.
+If you encounter any bugs or issues while using the plugin, please report them on the [GitHub Issues page](https://github.com/2vg/Mappen/issues). Provide a detailed description of the problem, and I will work on resolving it as soon as possible.
 
 Feel free to submit any suggestions for improvements or new features you'd like to see in future releases. Your feedback is highly appreciated!
 
@@ -494,16 +467,10 @@ Feel free to submit any suggestions for improvements or new features you'd like 
 
 ## Credits
 
+- **COFYYE**: Thanks to COFYYE, the original plugin creator.
+
 - **Code Snippets for Menu**: The menu code snippets were sourced from [oqyh's GitHub](https://github.com/oqyh). I would like to thank him for providing valuable resources that helped in building parts of this plugin.
   
 - **Other Contributors**: A big thank you to all other authors and contributors of similar plugins that inspired the creation of this MapCycle and Chooser plugin. Their work was a key part of shaping the final version of this plugin.
 
 This plugin is my version of the MapCycle and Chooser functionality, combining various elements from the community to provide a better and more customizable experience for server admins and players alike.
-
-## Donation
-
-If you would like to support me and help maintain and improve this plugin, you can donate via PayPal:
-
-[Donate on PayPal](https://paypal.me/cofyye)
-
-Your support is greatly appreciated!
