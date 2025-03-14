@@ -116,11 +116,6 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterListener<Listeners.OnMapEnd>(OnMapEnd);
 
-        //if(Config?.EnableScreenMenu == false)
-        //{
-            //RegisterListener<Listeners.OnTick>(OnTick);
-        //}
-
         if(!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
 
         if(Config?.EnableCommandAdsInChat == true)
@@ -198,11 +193,6 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
 
         RemoveListener<Listeners.OnMapStart>(OnMapStart);
         RemoveListener<Listeners.OnMapEnd>(OnMapEnd);
-
-        //if(Config?.EnableScreenMenu == false)
-        //{
-            //RemoveListener<Listeners.OnTick>(OnTick);
-        //}
 
         if(GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Stop();
     }
@@ -702,66 +692,6 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         GlobalVariables.VotingTimer = null;
     }
 
-    //public void OnTick()
-    //{
-    //    if (GlobalVariables.VoteStarted && Config?.VoteMapEnable == true)
-    //    {
-    //        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p));
-
-    //        foreach (var player in players)
-    //        {
-    //            if (!MenuUtils.PlayersMenu.ContainsKey(player.SteamID.ToString())) continue;
-    //            MenuUtils.PlayersMenu[player.SteamID.ToString()].MenuOpened = true;
-
-    //            if (Config?.EnablePlayerFreezeInMenu == true)
-    //            {
-    //                if (player.PlayerPawn.Value != null && player.PlayerPawn.Value.IsValid)
-    //                {
-    //                    player.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_NONE;
-    //                    Schema.SetSchemaValue(player.PlayerPawn.Value.Handle, "CBaseEntity", "m_nActualMoveType", 0);
-    //                    Utilities.SetStateChanged(player.PlayerPawn.Value, "CBaseEntity", "m_MoveType");
-    //                }
-    //            }
-
-    //            MenuUtils.CreateAndOpenHtmlVoteMenu(player);
-    //        }
-    //    }
-    //    else if(!GlobalVariables.VoteStarted || Config?.VoteMapEnable == false)
-    //    {
-    //        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p));
-
-    //        foreach (var player in players)
-    //        {
-    //            if (!MenuUtils.PlayersMenu.ContainsKey(player.SteamID.ToString())) continue;
-    //            if (MenuUtils.PlayersMenu[player.SteamID.ToString()].MenuOpened)
-    //            {
-    //                if (Config?.EnablePlayerFreezeInMenu == true)
-    //                {
-    //                    if (player.PlayerPawn.Value != null && player.PlayerPawn.Value.IsValid)
-    //                    {
-    //                        player.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_NONE;
-    //                        Schema.SetSchemaValue(player.PlayerPawn.Value.Handle, "CBaseEntity", "m_nActualMoveType", 0);
-    //                        Utilities.SetStateChanged(player.PlayerPawn.Value, "CBaseEntity", "m_MoveType");
-    //                    }
-    //                }
-
-    //                MenuUtils.CreateAndOpenHtmlMapsMenu(player);
-    //            }
-    //            else
-    //            {
-    //                if(Config?.EnablePlayerFreezeInMenu == true)
-    //                {
-    //                    if (player.PlayerPawn.Value != null && player.PlayerPawn.Value.IsValid)
-    //                    {
-    //                        player.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_WALK;
-    //                        Schema.SetSchemaValue(player.PlayerPawn.Value.Handle, "CBaseEntity", "m_nActualMoveType", 2);
-    //                        Utilities.SetStateChanged(player.PlayerPawn.Value, "CBaseEntity", "m_MoveType");
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
     // Command registration using attributes
 
     [ConsoleCommand("css_setnextmap", "Set a next map")]
