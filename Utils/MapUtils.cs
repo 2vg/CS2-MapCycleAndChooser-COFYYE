@@ -868,6 +868,18 @@ namespace Mappen.Utils
             }
         }
 
+        public static bool IsMapEligible(Map map, int currentPlayers, bool checkCooldown = true)
+        {
+            if (map.MapValue == Server.MapName) return false;
+            if (!map.MapCanVote || !map.MapCycleEnabled) return false;
+            if (map.MapMinPlayers > currentPlayers || map.MapMaxPlayers < currentPlayers) return false;
+            if (!CheckMapInCycleTime(map)) return false;
+            if (checkCooldown && Instance?.Config?.EnableMapCooldown == true &&
+                CooldownManager.GetMapCooldown(map.MapValue) > 0) return false;
+            
+            return true;
+        }
+
         public static bool CheckMapInCycleTime(Map map)
         {
             try
