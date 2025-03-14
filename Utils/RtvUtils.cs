@@ -233,6 +233,13 @@ namespace Mappen.Utils
             var gameRules = ServerUtils.GetGameRules();
             float timeLeft;
             
+            // Get current map config if available
+            Map? currentMap = null;
+            if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
+            {
+                currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            }
+            
             if (Instance.Config.PrioritizeRounds == true && gameRules != null)
             {
                 float maxLimit = (float)(ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0);
@@ -251,7 +258,32 @@ namespace Mappen.Utils
                 Instance.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", Math.Ceiling((float)timeLeft / 60) + extendTime);
             }
             
-            GlobalVariables.VotedForExtendMap = true;
+            // Increment the extend count
+            GlobalVariables.CurrentExtendCount++;
+            
+            // Get the maximum number of extends allowed
+            int maxExtends = Instance.Config.ExtendMapMaxTimes;
+            
+            // If the current map has a specific max extends setting, use that instead
+            if (currentMap != null && currentMap.MapMaxExtends.HasValue)
+            {
+                maxExtends = currentMap.MapMaxExtends.Value;
+            }
+            
+            // Check if we've reached the maximum number of extends
+            if (GlobalVariables.CurrentExtendCount >= maxExtends)
+            {
+                GlobalVariables.VotedForExtendMap = true;
+                Instance.Logger.LogInformation("Map has been extended {Count} times, reached maximum of {Max}",
+                    GlobalVariables.CurrentExtendCount, maxExtends);
+            }
+            else
+            {
+                GlobalVariables.VotedForExtendMap = false;
+                Instance.Logger.LogInformation("Map extended {Count}/{Max} times",
+                    GlobalVariables.CurrentExtendCount, maxExtends);
+            }
+            
             GlobalVariables.VotedForCurrentMap = false;
             GlobalVariables.RtvTriggered = false;
         }

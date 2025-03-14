@@ -74,6 +74,9 @@ namespace Mappen.Config
         [JsonPropertyName("extend_map_time")]
         public int ExtendMapTime { get; init; } = 8; // rounds or minutes if depends on round is false
 
+        [JsonPropertyName("extend_map_max_times")]
+        public int ExtendMapMaxTimes { get; init; } = 1; // maximum number of times a map can be extended
+
         [JsonPropertyName("extend_map_position")]
         public string ExtendMapPosition { get; init; } = "bottom";
 

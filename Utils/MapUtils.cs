@@ -576,7 +576,32 @@ namespace Mappen.Utils
                 Instance?.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", newTimeLimit);
             }
             
-            GlobalVariables.VotedForExtendMap = true;
+            // Increment the extend count
+            GlobalVariables.CurrentExtendCount++;
+            
+            // Get the maximum number of extends allowed
+            int maxExtends = Instance?.Config?.ExtendMapMaxTimes ?? 1;
+            
+            // If the current map has a specific max extends setting, use that instead
+            if (currentMap != null && currentMap.MapMaxExtends.HasValue)
+            {
+                maxExtends = currentMap.MapMaxExtends.Value;
+            }
+            
+            // Check if we've reached the maximum number of extends
+            if (GlobalVariables.CurrentExtendCount >= maxExtends)
+            {
+                GlobalVariables.VotedForExtendMap = true;
+                Instance?.Logger.LogInformation("Map has been extended {Count} times, reached maximum of {Max}",
+                    GlobalVariables.CurrentExtendCount, maxExtends);
+            }
+            else
+            {
+                GlobalVariables.VotedForExtendMap = false;
+                Instance?.Logger.LogInformation("Map extended {Count}/{Max} times",
+                    GlobalVariables.CurrentExtendCount, maxExtends);
+            }
+            
             GlobalVariables.VotedForCurrentMap = false;
         }
 
@@ -812,6 +837,10 @@ namespace Mappen.Utils
                 {
                     GlobalVariables.LastMap = Server.MapName;
                 }
+                
+                // Reset extend count for the new map
+                GlobalVariables.CurrentExtendCount = 0;
+                GlobalVariables.VotedForExtendMap = false;
                 
                 // Change to the next map
                 if (nextMap.MapIsWorkshop)
