@@ -233,7 +233,7 @@ namespace Mappen.Utils
             var gameRules = ServerUtils.GetGameRules();
             float timeLeft;
             
-            if (Instance.Config.DependsOnTheRound == true && gameRules != null)
+            if (Instance.Config.PrioritizeRounds == true && gameRules != null)
             {
                 float maxLimit = (float)(ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0);
                 timeLeft = maxLimit - gameRules.TotalRoundsPlayed;

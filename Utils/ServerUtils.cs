@@ -2,6 +2,7 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
 using Mappen.Variables;
+using Mappen.Classes;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 
@@ -26,7 +27,7 @@ namespace Mappen.Utils
                 VoteMapEnable = currentConfig.VoteMapEnable,
                 VoteMapDuration = newDuration, // Set the new value
                 VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
-                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                PrioritizeRounds = currentConfig.PrioritizeRounds,
                 EnableRandomNextMap = currentConfig.EnableRandomNextMap,
                 EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
                 EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
@@ -65,7 +66,7 @@ namespace Mappen.Utils
                 VoteMapEnable = currentConfig.VoteMapEnable,
                 VoteMapDuration = currentConfig.VoteMapDuration,
                 VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
-                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                PrioritizeRounds = currentConfig.PrioritizeRounds,
                 EnableRandomNextMap = currentConfig.EnableRandomNextMap,
                 EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
                 EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
@@ -104,7 +105,7 @@ namespace Mappen.Utils
                 VoteMapEnable = currentConfig.VoteMapEnable,
                 VoteMapDuration = currentConfig.VoteMapDuration,
                 VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
-                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                PrioritizeRounds = currentConfig.PrioritizeRounds,
                 EnableRandomNextMap = currentConfig.EnableRandomNextMap,
                 EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
                 EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
@@ -143,7 +144,7 @@ namespace Mappen.Utils
                 VoteMapEnable = currentConfig.VoteMapEnable,
                 VoteMapDuration = currentConfig.VoteMapDuration,
                 VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
-                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                PrioritizeRounds = currentConfig.PrioritizeRounds,
                 EnableRandomNextMap = currentConfig.EnableRandomNextMap,
                 EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
                 EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
@@ -182,7 +183,7 @@ namespace Mappen.Utils
                 VoteMapEnable = currentConfig.VoteMapEnable,
                 VoteMapDuration = currentConfig.VoteMapDuration,
                 VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
-                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                PrioritizeRounds = currentConfig.PrioritizeRounds,
                 EnableRandomNextMap = currentConfig.EnableRandomNextMap,
                 EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
                 EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
@@ -221,7 +222,7 @@ namespace Mappen.Utils
                 VoteMapEnable = currentConfig.VoteMapEnable,
                 VoteMapDuration = currentConfig.VoteMapDuration,
                 VoteMapOnFreezeTime = currentConfig.VoteMapOnFreezeTime,
-                DependsOnTheRound = currentConfig.DependsOnTheRound,
+                PrioritizeRounds = currentConfig.PrioritizeRounds,
                 EnableRandomNextMap = currentConfig.EnableRandomNextMap,
                 EnablePlayerFreezeInMenu = currentConfig.EnablePlayerFreezeInMenu,
                 EnablePlayerVotingInChat = currentConfig.EnablePlayerVotingInChat,
@@ -249,34 +250,83 @@ namespace Mappen.Utils
         {
             GlobalVariables.FreezeTime = ConVar.Find("mp_freezetime")?.GetPrimitiveValue<int>() ?? 5;
 
-            if (Instance?.Config?.DependsOnTheRound == true)
+            // Get current map config if available
+            Map? currentMap = null;
+            if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
             {
-                var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>();
+                currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            }
 
-                if (maxRounds <= 4)
+            if (currentMap != null && (currentMap.MapMaxRounds.HasValue || currentMap.MapTimeLimit.HasValue))
+            {
+                // Use map-specific settings if available
+                if (currentMap.MapMaxRounds.HasValue && currentMap.MapTimeLimit.HasValue)
                 {
-                    Server.ExecuteCommand("mp_maxrounds 5");
-                    Instance?.Logger.LogInformation("mp_maxrounds are set to a value less than 5. I set it to 5.");
+                    // Both settings are available, use the one based on PrioritizeRounds
+                    if (Instance?.Config?.PrioritizeRounds == true)
+                    {
+                        Server.ExecuteCommand($"mp_maxrounds {currentMap.MapMaxRounds.Value}");
+                        Server.ExecuteCommand("mp_timelimit 0");
+                        Instance?.Logger.LogInformation("Using map-specific maxrounds: {MaxRounds}", currentMap.MapMaxRounds.Value);
+                    }
+                    else
+                    {
+                        Server.ExecuteCommand($"mp_timelimit {currentMap.MapTimeLimit.Value}");
+                        Server.ExecuteCommand("mp_maxrounds 0");
+                        GlobalVariables.TimeLeft = currentMap.MapTimeLimit.Value * 60; // in seconds
+                        Instance?.Logger.LogInformation("Using map-specific timelimit: {TimeLimit}", currentMap.MapTimeLimit.Value);
+                    }
                 }
-
-                Server.ExecuteCommand("mp_timelimit 0");
+                else if (currentMap.MapMaxRounds.HasValue)
+                {
+                    // Only maxrounds is set
+                    Server.ExecuteCommand($"mp_maxrounds {currentMap.MapMaxRounds.Value}");
+                    Server.ExecuteCommand("mp_timelimit 0");
+                    Instance?.Logger.LogInformation("Using map-specific maxrounds: {MaxRounds}", currentMap.MapMaxRounds.Value);
+                }
+                else if (currentMap.MapTimeLimit.HasValue)
+                {
+                    // Only timelimit is set
+                    Server.ExecuteCommand($"mp_timelimit {currentMap.MapTimeLimit.Value}");
+                    Server.ExecuteCommand("mp_maxrounds 0");
+                    GlobalVariables.TimeLeft = currentMap.MapTimeLimit.Value * 60; // in seconds
+                    Instance?.Logger.LogInformation("Using map-specific timelimit: {TimeLimit}", currentMap.MapTimeLimit.Value);
+                }
             }
             else
             {
-                var timeLimit = ConVar.Find("mp_timelimit")?.GetPrimitiveValue<float>();
-
-                if (timeLimit <= 4.0f)
+                // Use global settings
+                if (Instance?.Config?.PrioritizeRounds == true)
                 {
-                    Server.ExecuteCommand("mp_timelimit 5");
-                    Instance?.Logger.LogInformation("mp_timelimit are set to a value less than 5. I set it to 5.");
-                    GlobalVariables.TimeLeft = 5 * 60; // in seconds
+                    var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>();
+
+                    if (maxRounds <= 4)
+                    {
+                        Server.ExecuteCommand("mp_maxrounds 5");
+                        Instance?.Logger.LogInformation("mp_maxrounds are set to a value less than 5. I set it to 5.");
+                    }
+
+                    Server.ExecuteCommand("mp_timelimit 0");
+                    Instance?.Logger.LogInformation("Using global maxrounds setting");
                 }
                 else
                 {
-                    GlobalVariables.TimeLeft = (timeLimit ?? 5.0f) * 60; // in seconds
-                }
+                    var timeLimit = ConVar.Find("mp_timelimit")?.GetPrimitiveValue<float>();
 
-                Server.ExecuteCommand("mp_maxrounds 0");
+                    if (timeLimit <= 4.0f)
+                    {
+                        Server.ExecuteCommand("mp_timelimit 5");
+                        Instance?.Logger.LogInformation("mp_timelimit are set to a value less than 5. I set it to 5.");
+                        GlobalVariables.TimeLeft = 5 * 60; // in seconds
+                    }
+                    else
+                    {
+                        GlobalVariables.TimeLeft = (timeLimit ?? 5.0f) * 60; // in seconds
+                    }
+
+                    Server.ExecuteCommand("mp_maxrounds 0");
+                    Instance?.Logger.LogInformation("Using global timelimit setting");
+                }
             }
         }
 

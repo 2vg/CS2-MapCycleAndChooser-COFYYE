@@ -32,8 +32,8 @@ namespace Mappen.Config
         [JsonPropertyName("vote_map_on_freezetime")]
         public bool VoteMapOnFreezeTime { get; init; } = true;
 
-        [JsonPropertyName("depends_on_the_round")]
-        public bool DependsOnTheRound { get; init; } = true;
+        [JsonPropertyName("prioritize_rounds")]
+        public bool PrioritizeRounds { get; init; } = true;
 
         //[JsonPropertyName("enable_screen_menu")]
         //public bool EnableScreenMenu { get; init; } = true;

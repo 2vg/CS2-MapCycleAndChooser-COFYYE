@@ -344,22 +344,53 @@ namespace Mappen.Utils
                 float maxLimit;
                 float timeLeft;
                 int minValue;
+                bool useRounds;
 
-                if (Instance?.Config?.DependsOnTheRound == true)
+                // Get current map config if available
+                Map? currentMap = null;
+                if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
                 {
-                    maxLimit = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
+                    currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+                }
+
+                // Determine which setting to use (rounds or time) based on map config and global settings
+                if (currentMap != null && (currentMap.MapMaxRounds.HasValue || currentMap.MapTimeLimit.HasValue))
+                {
+                    // Use map-specific settings if available
+                    if (currentMap.MapMaxRounds.HasValue && currentMap.MapTimeLimit.HasValue)
+                    {
+                        // Both settings are available, use the one based on PrioritizeRounds
+                        useRounds = Instance?.Config?.PrioritizeRounds == true;
+                    }
+                    else
+                    {
+                        // Only one setting is available, use that one
+                        useRounds = currentMap.MapMaxRounds.HasValue;
+                    }
+                }
+                else
+                {
+                    // Use global setting
+                    useRounds = Instance?.Config?.PrioritizeRounds == true;
+                }
+
+                if (useRounds)
+                {
+                    // Use rounds-based voting
+                    maxLimit = currentMap?.MapMaxRounds ?? ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
                     minValue = Instance?.Config?.VoteTriggerTimeBeforeMapEnd ?? 3; // rounds
                 }
                 else
                 {
-                    maxLimit = ConVar.Find("mp_timelimit")?.GetPrimitiveValue<float>() ?? 0.0f;
+                    // Use time-based voting
+                    maxLimit = currentMap?.MapTimeLimit ?? ConVar.Find("mp_timelimit")?.GetPrimitiveValue<float>() ?? 0.0f;
                     minValue = (Instance?.Config?.VoteTriggerTimeBeforeMapEnd ?? 3) * 60; // from minutes to seconds
                 }
 
                 var gameRules = ServerUtils.GetGameRules();
                 if (maxLimit > 0 && !GlobalVariables.VoteStarted && !GlobalVariables.VotedForCurrentMap && gameRules?.WarmupPeriod == false)
                 {
-                    if (Instance?.Config?.DependsOnTheRound == true && gameRules != null)
+                    if (useRounds && gameRules != null)
                     {
                         timeLeft = maxLimit - gameRules.TotalRoundsPlayed;
                     }
@@ -389,7 +420,7 @@ namespace Mappen.Utils
                                 }
                             }
 
-                            if (Instance?.Config?.DependsOnTheRound == true && Instance?.Config?.VoteMapOnFreezeTime == true)
+                            if (Instance?.Config?.PrioritizeRounds == true && Instance?.Config?.VoteMapOnFreezeTime == true)
                             {
                                 Server.ExecuteCommand($"mp_freezetime {(Instance?.Config?.VoteMapDuration ?? GlobalVariables.FreezeTime) + 2}");
                                 Instance?.Logger.LogInformation("Setting mp_freezetime to {FreezeTime} for vote",
@@ -403,7 +434,7 @@ namespace Mappen.Utils
                     }
                     else
                     {
-                        if(Instance?.Config?.DependsOnTheRound == true)
+                        if(Instance?.Config?.PrioritizeRounds == true)
                         {
                             Server.ExecuteCommand($"mp_freezetime {GlobalVariables.FreezeTime}");
                         }
@@ -411,7 +442,7 @@ namespace Mappen.Utils
                 }
                 else
                 {
-                    if (Instance?.Config?.DependsOnTheRound == true)
+                    if (Instance?.Config?.PrioritizeRounds == true)
                     {
                         Server.ExecuteCommand($"mp_freezetime {GlobalVariables.FreezeTime}");
                     }
@@ -498,18 +529,53 @@ namespace Mappen.Utils
         /// <param name="timeLeft">Current time left in the map</param>
         private static void HandleExtendMapVote(float timeLeft)
         {
-            if (Instance?.Config?.DependsOnTheRound == true)
+            // Get current map config if available
+            Map? currentMap = null;
+            bool useRounds;
+            
+            if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
             {
-                int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
+                currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            }
+
+            // Determine which setting to use (rounds or time) based on map config and global settings
+            if (currentMap != null && (currentMap.MapMaxRounds.HasValue || currentMap.MapTimeLimit.HasValue))
+            {
+                // Use map-specific settings if available
+                if (currentMap.MapMaxRounds.HasValue && currentMap.MapTimeLimit.HasValue)
+                {
+                    // Both settings are available, use the one based on PrioritizeRounds
+                    useRounds = Instance?.Config?.PrioritizeRounds == true;
+                }
+                else
+                {
+                    // Only one setting is available, use that one
+                    useRounds = currentMap.MapMaxRounds.HasValue;
+                }
+            }
+            else
+            {
+                // Use global setting
+                useRounds = Instance?.Config?.PrioritizeRounds == true;
+            }
+
+            int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
+            
+            if (useRounds)
+            {
+                // Update the server cvar
                 Server.ExecuteCommand($"mp_maxrounds {(int)timeLeft + extendTime}");
                 Instance?.Logger.LogInformation("Vote to extend map. Setting mp_maxrounds to {Rounds}", (int)timeLeft + extendTime);
             }
             else
             {
-                int extendTime = Instance?.Config?.ExtendMapTime ?? 5;
-                Server.ExecuteCommand($"mp_timelimit {Math.Ceiling((float)timeLeft / 60) + extendTime}");
-                Instance?.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", Math.Ceiling((float)timeLeft / 60) + extendTime);
+                float newTimeLimit = (float)Math.Ceiling((float)timeLeft / 60) + extendTime;
+                
+                // Update the server cvar
+                Server.ExecuteCommand($"mp_timelimit {newTimeLimit}");
+                Instance?.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", newTimeLimit);
             }
+            
             GlobalVariables.VotedForExtendMap = true;
             GlobalVariables.VotedForCurrentMap = false;
         }
@@ -587,22 +653,53 @@ namespace Mappen.Utils
                 float maxLimit;
                 float timeLeft;
                 int minValue;
+                bool useRounds;
 
-                if (Instance?.Config?.DependsOnTheRound == true)
+                // Get current map config if available
+                Map? currentMap = null;
+                if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
                 {
-                    maxLimit = (float)(ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0);
+                    currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+                }
+
+                // Determine which setting to use (rounds or time) based on map config and global settings
+                if (currentMap != null && (currentMap.MapMaxRounds.HasValue || currentMap.MapTimeLimit.HasValue))
+                {
+                    // Use map-specific settings if available
+                    if (currentMap.MapMaxRounds.HasValue && currentMap.MapTimeLimit.HasValue)
+                    {
+                        // Both settings are available, use the one based on PrioritizeRounds
+                        useRounds = Instance?.Config?.PrioritizeRounds == true;
+                    }
+                    else
+                    {
+                        // Only one setting is available, use that one
+                        useRounds = currentMap.MapMaxRounds.HasValue;
+                    }
+                }
+                else
+                {
+                    // Use global setting
+                    useRounds = Instance?.Config?.PrioritizeRounds == true;
+                }
+
+                if (useRounds)
+                {
+                    // Use rounds-based voting
+                    maxLimit = (float)(currentMap?.MapMaxRounds ?? ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0);
                     minValue = Instance?.Config?.VoteTriggerTimeBeforeMapEnd ?? 3; // rounds
                 }
                 else
                 {
-                    maxLimit = ConVar.Find("mp_timelimit")?.GetPrimitiveValue<float>() ?? 0.0f;
+                    // Use time-based voting
+                    maxLimit = currentMap?.MapTimeLimit ?? ConVar.Find("mp_timelimit")?.GetPrimitiveValue<float>() ?? 0.0f;
                     minValue = (Instance?.Config?.VoteTriggerTimeBeforeMapEnd ?? 3) * 60; // from minutes to seconds
                 }
 
                 var gameRules = ServerUtils.GetGameRules();
                 if (maxLimit > 0 && !GlobalVariables.VoteStarted && !GlobalVariables.VotedForCurrentMap && gameRules?.WarmupPeriod == false)
                 {
-                    if(Instance?.Config?.DependsOnTheRound == true && gameRules != null)
+                    if(useRounds && gameRules != null)
                     {
                         timeLeft = maxLimit - gameRules.TotalRoundsPlayed;
                     }

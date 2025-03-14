@@ -116,7 +116,9 @@ namespace Mappen.Utils
                     mapMaxPlayers: 64,
                     mapCycleStartTime: "",
                     mapCycleEndTime: "",
-                    mapCooldownCycles: 10
+                    mapCooldownCycles: 10,
+                    mapMaxRounds: null,
+                    mapTimeLimit: null
                 );
                 
                 DefaultMapConfig = defaultMap;
@@ -299,7 +301,9 @@ namespace Mappen.Utils
                     mapMaxPlayers: DefaultMapConfig.MapMaxPlayers,
                     mapCycleStartTime: DefaultMapConfig.MapCycleStartTime,
                     mapCycleEndTime: DefaultMapConfig.MapCycleEndTime,
-                    mapCooldownCycles: DefaultMapConfig.MapCooldownCycles
+                    mapCooldownCycles: DefaultMapConfig.MapCooldownCycles,
+                    mapMaxRounds: DefaultMapConfig.MapMaxRounds,
+                    mapTimeLimit: DefaultMapConfig.MapTimeLimit
                 );
             }
             else
@@ -316,7 +320,9 @@ namespace Mappen.Utils
                     mapMaxPlayers: 64,
                     mapCycleStartTime: "",
                     mapCycleEndTime: "",
-                    mapCooldownCycles: 2
+                    mapCooldownCycles: 2,
+                    mapMaxRounds: null,
+                    mapTimeLimit: null
                 );
             }
 
@@ -365,7 +371,9 @@ namespace Mappen.Utils
                     mapMaxPlayers: mapConfig.MapMaxPlayers,
                     mapCycleStartTime: mapConfig.MapCycleStartTime,
                     mapCycleEndTime: mapConfig.MapCycleEndTime,
-                    mapCooldownCycles: mapConfig.MapCooldownCycles
+                    mapCooldownCycles: mapConfig.MapCooldownCycles,
+                    mapMaxRounds: mapConfig.MapMaxRounds,
+                    mapTimeLimit: mapConfig.MapTimeLimit
                 );
                 
                 // Save the updated config
@@ -492,7 +500,9 @@ namespace Mappen.Utils
                             mapMaxPlayers: mostRecentConfig.MapMaxPlayers,
                             mapCycleStartTime: mostRecentConfig.MapCycleStartTime,
                             mapCycleEndTime: mostRecentConfig.MapCycleEndTime,
-                            mapCooldownCycles: mostRecentConfig.MapCooldownCycles
+                            mapCooldownCycles: mostRecentConfig.MapCooldownCycles,
+                            mapMaxRounds: mostRecentConfig.MapMaxRounds,
+                            mapTimeLimit: mostRecentConfig.MapTimeLimit
                         );
                         
                         // Save the new config
@@ -562,7 +572,9 @@ namespace Mappen.Utils
                                 mapMaxPlayers: mostRecentConfig.MapMaxPlayers,
                                 mapCycleStartTime: mostRecentConfig.MapCycleStartTime,
                                 mapCycleEndTime: mostRecentConfig.MapCycleEndTime,
-                                mapCooldownCycles: mostRecentConfig.MapCooldownCycles
+                                mapCooldownCycles: mostRecentConfig.MapCooldownCycles,
+                                mapMaxRounds: mostRecentConfig.MapMaxRounds,
+                                mapTimeLimit: mostRecentConfig.MapTimeLimit
                             );
                             
                             // Save the updated config

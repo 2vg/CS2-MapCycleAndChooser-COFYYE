@@ -300,7 +300,7 @@ namespace Mappen.Utils
 
                 if (Instance?.Config?.EnableExtendMap == true && Instance.Config?.ExtendMapPosition == "top" && GlobalVariables.VotedForExtendMap == false)
                 {
-                    if(Instance?.Config?.DependsOnTheRound == true)
+                    if(Instance?.Config?.PrioritizeRounds == true)
                     {
                         menuValues.Add("{menu.item.extend.map}{splitextendmap}" + Instance?.Localizer.ForPlayer(player, "menu.item.extend.map.round").Replace("{EXTEND_TIME}", Instance?.Config?.ExtendMapTime.ToString()) ?? "-");
                     }
@@ -322,7 +322,7 @@ namespace Mappen.Utils
 
                 if (Instance?.Config?.EnableExtendMap == true && Instance?.Config?.ExtendMapPosition == "bottom" && GlobalVariables.VotedForExtendMap == false)
                 {
-                    if (Instance.Config?.DependsOnTheRound == true)
+                    if (Instance.Config?.PrioritizeRounds == true)
                     {
                         menuValues.Add("{menu.item.extend.map}{splitextendmap}" + Instance?.Localizer.ForPlayer(player, "menu.item.extend.map.round").Replace("{EXTEND_TIME}", Instance?.Config?.ExtendMapTime.ToString()) ?? "-");
                     }

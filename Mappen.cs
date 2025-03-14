@@ -342,7 +342,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
                 GlobalVariables.CurrentTime += 1;
             }, TimerFlags.REPEAT);
 
-        if (Config?.DependsOnTheRound == false)
+        if (Config?.PrioritizeRounds == false)
         {
             GlobalVariables.VotingTimer ??= AddTimer(3.0f, () =>
                 {
@@ -449,7 +449,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
     {
         if (@event == null) return HookResult.Continue;
 
-        if (Config?.DependsOnTheRound == true)
+        if (Config?.PrioritizeRounds == true)
         {
             return MapUtils.CheckAndStartMapVoting();
         }
@@ -479,7 +479,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
             return HookResult.Continue;
         }
 
-        if(Config?.DependsOnTheRound == true)
+        if(Config?.PrioritizeRounds == true)
         {
             return MapUtils.CheckAndPickMapsForVoting();
         }
@@ -916,7 +916,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
             // If a vote has completed through normal time-based voting, show the next map but don't imply immediate change
             player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.vote.completed").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue ?? ""));
         }
-        else if(Config?.DependsOnTheRound == true && gameRules != null)
+        else if(Config?.PrioritizeRounds == true && gameRules != null)
         {
             var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
             var roundLeft = maxRounds - gameRules.TotalRoundsPlayed;
@@ -930,7 +930,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
                 player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
             }
         }
-        else if(Config?.DependsOnTheRound == true && gameRules == null)
+        else if(Config?.PrioritizeRounds == true && gameRules == null)
         {
             player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.unavailable"));
         }
