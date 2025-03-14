@@ -458,10 +458,12 @@ namespace Mappen.Utils
         }
 
         /// <summary>
-        /// Processes the vote results and takes appropriate actions based on the winning map or option.
+        /// Common method to process vote results for both regular map votes and RTV votes.
         /// </summary>
         /// <param name="timeLeft">Current time left in the map</param>
-        private static void ProcessVoteResults(float timeLeft)
+        /// <param name="isRtvVote">Whether this is an RTV vote</param>
+        /// <param name="changeMapInstantly">Whether to change the map instantly after vote</param>
+        public static void ProcessVoteResults(float timeLeft, bool isRtvVote = false, bool changeMapInstantly = false)
         {
             try
             {
@@ -474,7 +476,14 @@ namespace Mappen.Utils
                 }
                 else if (winningMap == null && type == "extendmap")
                 {
-                    HandleExtendMapVote(timeLeft);
+                    if (isRtvVote)
+                    {
+                        HandleExtendMapVote(timeLeft, true);
+                    }
+                    else
+                    {
+                        HandleExtendMapVote(timeLeft);
+                    }
                 }
                 else if (winningMap == null && type == "ignorevote")
                 {
@@ -509,6 +518,21 @@ namespace Mappen.Utils
                 }
 
                 NotifyPlayersAboutVoteResults(type);
+
+                // Handle map change for RTV votes
+                if (isRtvVote && type != "extendmap")
+                {
+                    if (changeMapInstantly)
+                    {
+                        ChangeMap(GlobalVariables.NextMap);
+                    }
+                    else
+                    {
+                        // Set a flag to change map at the end of the round
+                        GlobalVariables.RtvTriggered = true;
+                        Instance?.Logger.LogInformation("Map will change at the end of the round");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -520,14 +544,30 @@ namespace Mappen.Utils
                 GlobalVariables.VoteStarted = false;
                 GlobalVariables.IsVotingInProgress = false;
                 GlobalVariables.VotedForCurrentMap = true;
+                
+                // Reset RTV flag if this is an RTV vote
+                if (isRtvVote)
+                {
+                    GlobalVariables.RtvTriggered = false;
+                }
             }
+        }
+
+        /// <summary>
+        /// Processes the vote results for regular map votes.
+        /// </summary>
+        /// <param name="timeLeft">Current time left in the map</param>
+        private static void ProcessVoteResults(float timeLeft)
+        {
+            ProcessVoteResults(timeLeft, false);
         }
 
         /// <summary>
         /// Handles the extend map vote option by updating the appropriate server settings.
         /// </summary>
         /// <param name="timeLeft">Current time left in the map</param>
-        private static void HandleExtendMapVote(float timeLeft)
+        /// <param name="isRtvVote">Whether this is an RTV vote</param>
+        private static void HandleExtendMapVote(float timeLeft, bool isRtvVote = false)
         {
             // Get current map config if available
             Map? currentMap = null;
@@ -603,6 +643,12 @@ namespace Mappen.Utils
             }
             
             GlobalVariables.VotedForCurrentMap = false;
+            
+            // Reset RTV flag if this is an RTV vote
+            if (isRtvVote)
+            {
+                GlobalVariables.RtvTriggered = false;
+            }
         }
 
         /// <summary>

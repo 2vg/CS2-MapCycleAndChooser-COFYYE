@@ -122,32 +122,7 @@ namespace Mappen.Utils
 
                                 player.ExecuteClientCommand("play sounds/ui/item_sticker_select.vsnd_c");
 
-                                Instance?.AddTimer(2.0f, () =>
-                                {
-                                    try
-                                    {
-                                        GlobalVariables.LastMap = Server.MapName;
-                                        if (map.MapIsWorkshop)
-                                        {
-                                            if (string.IsNullOrEmpty(map.MapWorkshopId))
-                                            {
-                                                Server.ExecuteCommand($"ds_workshop_changelevel {map.MapValue}");
-                                            }
-                                            else
-                                            {
-                                                Server.ExecuteCommand($"host_workshop_map {map.MapWorkshopId}");
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Server.ExecuteCommand($"changelevel {map.MapValue}");
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Instance?.Logger.LogError(ex, "Error changing map to {MapName}", map.MapValue);
-                                    }
-                                }, TimerFlags.STOP_ON_MAPCHANGE);
+                                Instance?.AddTimer(2.0f, () => MapUtils.ChangeMap(map), TimerFlags.STOP_ON_MAPCHANGE);
                             }
                             else
                             {
