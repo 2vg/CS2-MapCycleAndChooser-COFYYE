@@ -195,7 +195,7 @@ In version 2.0, the configuration system has been significantly improved:
      - `true`: Increases the freeze time in the next round and starts voting during it.  
      - `false`: Voting starts at the beginning of the next round but does not extend freeze time. Players can vote while the round progresses.  
 
-4. **`depends_on_the_round`**  
+4. **`prioritize_rounds`**  
    - **Possible Values**: `true`, `false`  
    - **Description**: Determines whether map voting is based on rounds or time.  
      - `true`: The plugin uses `mp_maxrounds` to trigger voting.  
@@ -261,66 +261,72 @@ In version 2.0, the configuration system has been significantly improved:
 17. **`extend_map_time`**  
     - **Possible Values**: Integer values greater than `0`  
     - **Description**: Defines how much time the map will be extended.  
-      - If `depends_on_round` is `true`, the value represents rounds.  
-      - If `depends_on_round` is `false`, the value represents minutes.  
+      - If `prioritize_rounds` is `true`, the value represents rounds.  
+      - If `prioritize_rounds` is `false`, the value represents minutes.  
 
-18. **`extend_map_position`**  
+18. **`extend_map_max_times`**  
+    - **Possible Values**: Integer values greater than `0`  
+    - **Description**: Defines the maximum number of times a map can be extended through voting.  
+      - Default is 1, meaning maps can only be extended once.
+      - This is a global setting that applies to all maps unless overridden by map-specific settings.
+
+19. **`extend_map_position`**  
     - **Possible Values**: `"top"`, `"bottom"`  
     - **Description**: Defines whether the "Extend Map" option appears at the top or bottom of the voting menu.  
 
-19. **`delay_to_change_map_in_the_end`**  
+20. **`delay_to_change_map_in_the_end`**  
     - **Possible Values**: Integer values greater than `5`  
     - **Description**: Defines the delay (in seconds) between the end of the current map and the actual map change.  
 
-20. **`vote_trigger_time_before_map_end`**  
+21. **`vote_trigger_time_before_map_end`**  
     - **Possible Values**: Integer values greater than `2`  
     - **Description**: Defines how long before the end of the current map the vote is triggered.  
-      - If `depends_on_round` is `true`, the value is in rounds.  
-      - If `depends_on_round` is `false`, the value is in minutes.  
+      - If `prioritize_rounds` is `true`, the value is in rounds.  
+      - If `prioritize_rounds` is `false`, the value is in minutes.  
 
-21. **`rtv_enable`**  
+22. **`rtv_enable`**  
     - **Possible Values**: `true`, `false`  
     - **Description**: Enables or disables the Rock The Vote (RTV) functionality.  
       - `true`: RTV is enabled.  
       - `false`: RTV is disabled.  
 
-22. **`rtv_delay`**  
+23. **`rtv_delay`**  
     - **Possible Values**: Integer values greater than `0`  
     - **Description**: Defines the delay (in seconds) after map start before players can use RTV.  
 
-23. **`rtv_player_percentage`**  
+24. **`rtv_player_percentage`**  
     - **Possible Values**: Integer values between `1` and `100`  
     - **Description**: Defines the percentage of players needed to trigger an RTV vote.  
 
-24. **`rtv_change_instantly`**  
+25. **`rtv_change_instantly`**  
     - **Possible Values**: `true`, `false`  
     - **Description**: Determines if the map changes immediately when RTV is triggered.  
       - `true`: Map changes immediately.  
       - `false`: Map changes at the end of the round.  
 
-25. **`rtv_respect_nextmap`**  
+26. **`rtv_respect_nextmap`**  
     - **Possible Values**: `true`, `false`  
     - **Description**: Determines if RTV should use the already set nextmap.  
       - `true`: Uses the already set nextmap when RTV is triggered.  
       - `false`: Starts a new vote when RTV is triggered.  
 
-26. **`enable_map_cooldown`**  
+27. **`enable_map_cooldown`**  
     - **Possible Values**: `true`, `false`  
     - **Description**: Enables or disables map cooldowns to prevent the same maps from being played too frequently.  
       - When enabled, maps that were recently played will be excluded from the map cycle and voting until their cooldown expires.
 
-27. **`sounds`**
+28. **`sounds`**
    - **Possible Values**: An array of string paths to sound files.
    - **Description**: Specifies the sounds that play when map voting begins.
      - Add as many sounds as you'd like, and the plugin will play one randomly.
      - Leave this field empty (`[]`) to disable sounds.
 
-28. **`enable_workshop_collection_sync`**
+29. **`enable_workshop_collection_sync`**
    - **Possible Values**: `true`, `false`
    - **Description**: Enables or disables automatic synchronization of maps from Steam Workshop collections.
      - When enabled, the plugin will fetch maps from the specified Workshop collections and add them to your map pool.
 
-29. **`workshop_collection_ids`**
+30. **`workshop_collection_ids`**
    - **Possible Values**: List of strings (Workshop collection IDs)
    - **Description**: List of Steam Workshop collection IDs to synchronize maps from.
      - Example: `["123456789", "987654321"]`
@@ -374,6 +380,24 @@ Each map now has its own configuration file with the following options:
     - **Description**: The number of map cycles that must pass before this map can be played again.
     - **Example**: If set to 2, the map will be unavailable for 2 map changes after it's played.
     - **Note**: Only applies when `enable_map_cooldown` is set to `true` in the main configuration.
+
+12. **`map_max_rounds`**  
+    - **Possible Values**: Integer values (null or greater than 0)
+    - **Description**: The maximum number of rounds this specific map. If want rounds-based, `map_time_limit` should be `null`.
+    - **Example**: If set to 3, players can play 3 rounds.
+    - **Note**: If not specified (null), the global `extend_map_time` setting will be used instead.
+
+13. **`map_time_limit`**  
+    - **Possible Values**: Integer values (null or greater than 0)
+    - **Description**: The maximum timelimit of rounds this specific map. If want timelimit-based, `map_max_rounds` should be `null`.
+    - **Example**: If set to 10, players can play 10 minutes.
+    - **Note**: If not specified (null), the global `extend_map_time` setting will be used instead.
+
+14. **`map_max_extends`**  
+    - **Possible Values**: Integer values (null or greater than 0)
+    - **Description**: The maximum number of times this specific map can be extended through voting.
+    - **Example**: If set to 3, players can vote to extend this map up to 3 times before the extend option is removed.
+    - **Note**: If not specified (null), the global `extend_map_max_times` setting will be used instead.
 
 ### Workshop Map Mapping System
 
