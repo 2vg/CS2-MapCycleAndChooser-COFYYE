@@ -149,172 +149,22 @@ namespace Mappen.Utils
         /// </summary>
         private static void ProcessRtvVoteResults()
         {
-            try
-            {
-                var (winningMap, type) = MapUtils.GetWinningMap();
-
-                if (winningMap != null)
-                {
-                    GlobalVariables.NextMap = winningMap;
-                    Instance.Logger.LogInformation("Vote completed. Next map: {MapName}", winningMap.MapValue);
-                }
-                else if (winningMap == null && type == "extendmap")
-                {
-                    HandleExtendMapVote();
-                }
-                else if (winningMap == null && type == "ignorevote")
-                {
-                    GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                    Instance.Logger.LogInformation("Winning map is Ignore Vote. Next map is {NEXTMAP}", GlobalVariables.NextMap?.MapValue);
-                }
-                else if (winningMap == null && type == "tie")
-                {
-                    // This case is handled in GetWinningMap
-                    Instance.Logger.LogInformation("Vote ended in a tie. Random map was selected.");
-                }
-                else if (winningMap == null && type == "error")
-                {
-                    GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                    Instance.Logger.LogWarning("Error during vote processing. Selecting random map: {MapName}", GlobalVariables.NextMap?.MapValue);
-                }
-                else
-                {
-                    GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
-                    Instance.Logger.LogInformation("No winning map determined. Selecting random map: {MapName}", GlobalVariables.NextMap?.MapValue);
-                }
-
-                // Clean up
-                GlobalVariables.Votes.Clear();
-                GlobalVariables.MapForVotes.Clear();
-                GlobalVariables.VoteStarted = false;
-                Instance.AddTimer(1.0f, () => GlobalVariables.IsVotingInProgress = false);
-
-                if (type != "extendmap")
-                {
-                    GlobalVariables.VotedForCurrentMap = true;
-                }
-
-                NotifyPlayersAboutVoteResults(type);
-
-                // If not extending the map, change map based on settings
-                if (type != "extendmap")
-                {
-                    if (Instance.Config.RtvChangeInstantly)
-                    {
-                        ChangeMapImmediately(GlobalVariables.NextMap);
-                    }
-                    else
-                    {
-                        // Set a flag to change map at the end of the round
-                        GlobalVariables.RtvTriggered = true;
-                        Instance.Logger.LogInformation("Map will change at the end of the round");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Instance.Logger.LogError(ex, "Error processing vote results");
-                
-                // Ensure we clean up even if there's an error
-                GlobalVariables.Votes.Clear();
-                GlobalVariables.MapForVotes.Clear();
-                GlobalVariables.VoteStarted = false;
-                GlobalVariables.IsVotingInProgress = false;
-                GlobalVariables.VotedForCurrentMap = true;
-                GlobalVariables.RtvTriggered = false;
-            }
-        }
-
-        /// <summary>
-        /// Handles the extend map vote option.
-        /// </summary>
-        private static void HandleExtendMapVote()
-        {
-            var gameRules = ServerUtils.GetGameRules();
+            // Get the current time left
             float timeLeft;
-            
-            // Get current map config if available
-            Map? currentMap = null;
-            if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
-            {
-                currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
-            }
+            var gameRules = ServerUtils.GetGameRules();
             
             if (Instance.Config.PrioritizeRounds == true && gameRules != null)
             {
                 float maxLimit = (float)(ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0);
                 timeLeft = maxLimit - gameRules.TotalRoundsPlayed;
-                
-                int extendTime = Instance.Config.ExtendMapTime;
-                Server.ExecuteCommand($"mp_maxrounds {(int)timeLeft + extendTime}");
-                Instance.Logger.LogInformation("Vote to extend map. Setting mp_maxrounds to {Rounds}", (int)timeLeft + extendTime);
             }
             else
             {
                 timeLeft = GlobalVariables.TimeLeft - GlobalVariables.CurrentTime;
-                
-                int extendTime = Instance.Config.ExtendMapTime;
-                Server.ExecuteCommand($"mp_timelimit {Math.Ceiling((float)timeLeft / 60) + extendTime}");
-                Instance.Logger.LogInformation("Vote to extend map. Setting mp_timelimit to {Minutes}", Math.Ceiling((float)timeLeft / 60) + extendTime);
             }
             
-            // Increment the extend count
-            GlobalVariables.CurrentExtendCount++;
-            
-            // Get the maximum number of extends allowed
-            int maxExtends = Instance.Config.ExtendMapMaxTimes;
-            
-            // If the current map has a specific max extends setting, use that instead
-            if (currentMap != null && currentMap.MapMaxExtends.HasValue)
-            {
-                maxExtends = currentMap.MapMaxExtends.Value;
-            }
-            
-            // Check if we've reached the maximum number of extends
-            if (GlobalVariables.CurrentExtendCount >= maxExtends)
-            {
-                GlobalVariables.VotedForExtendMap = true;
-                Instance.Logger.LogInformation("Map has been extended {Count} times, reached maximum of {Max}",
-                    GlobalVariables.CurrentExtendCount, maxExtends);
-            }
-            else
-            {
-                GlobalVariables.VotedForExtendMap = false;
-                Instance.Logger.LogInformation("Map extended {Count}/{Max} times",
-                    GlobalVariables.CurrentExtendCount, maxExtends);
-            }
-            
-            GlobalVariables.VotedForCurrentMap = false;
-            GlobalVariables.RtvTriggered = false;
-        }
-
-        /// <summary>
-        /// Notifies all players about the vote results.
-        /// </summary>
-        /// <param name="type">The type of vote result</param>
-        private static void NotifyPlayersAboutVoteResults(string type)
-        {
-            var activePlayers = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p)).ToList();
-            foreach (var player in activePlayers)
-            {
-                try
-                {
-                    if (type == "extendmap")
-                    {
-                        player.PrintToChat(Instance.Localizer.ForPlayer(player, "vote.finished.extend.map.round").Replace("{EXTENDED_TIME}", Instance.Config.ExtendMapTime.ToString()));
-                    }
-                    else
-                    {
-                        player.PrintToChat(Instance.Localizer.ForPlayer(player, "vote.finished").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue));
-                    }
-
-                    GlobalVariables.KitsuneMenu?.ClearMenus(player);
-                }
-                catch (Exception ex)
-                {
-                    Instance.Logger.LogError(ex, "Error notifying player {PlayerName} about vote results", player.PlayerName);
-                }
-            }
+            // Use the common vote processing method with RTV-specific parameters
+            MapUtils.ProcessVoteResults(timeLeft, true, Instance.Config.RtvChangeInstantly);
         }
 
         /// <summary>

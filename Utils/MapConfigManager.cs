@@ -116,9 +116,7 @@ namespace Mappen.Utils
                     mapMaxPlayers: 64,
                     mapCycleStartTime: "",
                     mapCycleEndTime: "",
-                    mapCooldownCycles: 10,
-                    mapMaxRounds: null,
-                    mapTimeLimit: null
+                    mapCooldownCycles: 10
                 );
                 
                 DefaultMapConfig = defaultMap;
@@ -303,7 +301,8 @@ namespace Mappen.Utils
                     mapCycleEndTime: DefaultMapConfig.MapCycleEndTime,
                     mapCooldownCycles: DefaultMapConfig.MapCooldownCycles,
                     mapMaxRounds: DefaultMapConfig.MapMaxRounds,
-                    mapTimeLimit: DefaultMapConfig.MapTimeLimit
+                    mapTimeLimit: DefaultMapConfig.MapTimeLimit,
+                    mapMaxExtends : DefaultMapConfig.MapMaxExtends
                 );
             }
             else
@@ -322,7 +321,8 @@ namespace Mappen.Utils
                     mapCycleEndTime: "",
                     mapCooldownCycles: 2,
                     mapMaxRounds: null,
-                    mapTimeLimit: null
+                    mapTimeLimit: null,
+                    mapMaxExtends : null
                 );
             }
 
@@ -373,7 +373,8 @@ namespace Mappen.Utils
                     mapCycleEndTime: mapConfig.MapCycleEndTime,
                     mapCooldownCycles: mapConfig.MapCooldownCycles,
                     mapMaxRounds: mapConfig.MapMaxRounds,
-                    mapTimeLimit: mapConfig.MapTimeLimit
+                    mapTimeLimit: mapConfig.MapTimeLimit,
+                    mapMaxExtends : mapConfig.MapMaxExtends
                 );
                 
                 // Save the updated config
@@ -557,7 +558,8 @@ namespace Mappen.Utils
                 mapCycleEndTime: mostRecentConfig.MapCycleEndTime,
                 mapCooldownCycles: mostRecentConfig.MapCooldownCycles,
                 mapMaxRounds: mostRecentConfig.MapMaxRounds,
-                mapTimeLimit: mostRecentConfig.MapTimeLimit
+                mapTimeLimit: mostRecentConfig.MapTimeLimit,
+                mapMaxExtends : mostRecentConfig.MapMaxExtends
             );
             
             // Save the new config
@@ -637,7 +639,8 @@ namespace Mappen.Utils
                     mapCycleEndTime: mostRecentConfig.MapCycleEndTime,
                     mapCooldownCycles: mostRecentConfig.MapCooldownCycles,
                     mapMaxRounds: mostRecentConfig.MapMaxRounds,
-                    mapTimeLimit: mostRecentConfig.MapTimeLimit
+                    mapTimeLimit: mostRecentConfig.MapTimeLimit,
+                    mapMaxExtends : mostRecentConfig.MapMaxExtends
                 );
                 
                 // Save the updated config
