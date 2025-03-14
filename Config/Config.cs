@@ -1,4 +1,4 @@
-﻿﻿sing CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using Mappen.Classes;
 using System.Text.Json.Serialization;
 
@@ -32,8 +32,8 @@ namespace Mappen.Config
         [JsonPropertyName("vote_map_on_freezetime")]
         public bool VoteMapOnFreezeTime { get; init; } = true;
 
-        [JsonPropertyName("depends_on_the_round")]
-        public bool DependsOnTheRound { get; init; } = true;
+        [JsonPropertyName("prioritize_rounds")]
+        public bool PrioritizeRounds { get; init; } = true;
 
         //[JsonPropertyName("enable_screen_menu")]
         //public bool EnableScreenMenu { get; init; } = true;
@@ -73,6 +73,9 @@ namespace Mappen.Config
 
         [JsonPropertyName("extend_map_time")]
         public int ExtendMapTime { get; init; } = 8; // rounds or minutes if depends on round is false
+
+        [JsonPropertyName("extend_map_max_times")]
+        public int ExtendMapMaxTimes { get; init; } = 1; // maximum number of times a map can be extended
 
         [JsonPropertyName("extend_map_position")]
         public string ExtendMapPosition { get; init; } = "bottom";

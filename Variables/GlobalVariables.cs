@@ -12,6 +12,7 @@ namespace Mappen.Variables
         private static bool _voteStarted = false;
         private static bool _votedForCurrentMap = false;
         private static bool _votedForExtendMap = false;
+        private static int _currentExtendCount = 0;
         private static bool _isVotingInProgress = false;
         private static Map? _nextmap = null;
         private static string _lastmap = "";
@@ -38,6 +39,7 @@ namespace Mappen.Variables
         public static bool VoteStarted { get { return _voteStarted; } set { _voteStarted = value; } }
         public static bool VotedForCurrentMap { get { return _votedForCurrentMap; } set { _votedForCurrentMap = value; } }
         public static bool VotedForExtendMap { get { return _votedForExtendMap; } set { _votedForExtendMap = value; } }
+        public static int CurrentExtendCount { get { return _currentExtendCount; } set { _currentExtendCount = value; } }
         public static bool IsVotingInProgress { get { return _isVotingInProgress; } set { _isVotingInProgress = value; } }
         public static Map? NextMap { get { return _nextmap; } set { _nextmap = value; } }
         public static string LastMap { get { return _lastmap; } set { _lastmap = value; } }

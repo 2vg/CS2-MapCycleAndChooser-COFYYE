@@ -1,4 +1,4 @@
-﻿﻿sing CounterStrikeSharp.API.Core;
+﻿﻿using CounterStrikeSharp.API.Core;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -116,11 +116,6 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterListener<Listeners.OnMapEnd>(OnMapEnd);
 
-        //if(Config?.EnableScreenMenu == false)
-        //{
-            //RegisterListener<Listeners.OnTick>(OnTick);
-        //}
-
         if(!GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Start();
 
         if(Config?.EnableCommandAdsInChat == true)
@@ -198,11 +193,6 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
 
         RemoveListener<Listeners.OnMapStart>(OnMapStart);
         RemoveListener<Listeners.OnMapEnd>(OnMapEnd);
-
-        //if(Config?.EnableScreenMenu == false)
-        //{
-            //RemoveListener<Listeners.OnTick>(OnTick);
-        //}
 
         if(GlobalVariables.Timers.IsRunning) GlobalVariables.Timers.Stop();
     }
@@ -342,7 +332,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
                 GlobalVariables.CurrentTime += 1;
             }, TimerFlags.REPEAT);
 
-        if (Config?.DependsOnTheRound == false)
+        if (Config?.PrioritizeRounds == false)
         {
             GlobalVariables.VotingTimer ??= AddTimer(3.0f, () =>
                 {
@@ -364,57 +354,111 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         {
             try
             {
-                // Save cooldowns before map change
-                Utils.CooldownManager.SaveCooldowns();
-                
-                // Clean up resources
-                GlobalVariables.Votes.Clear();
-                GlobalVariables.MapForVotes.Clear();
-                
-                // Kill any active timers
-                GlobalVariables.TimeLeftTimer?.Kill();
-                GlobalVariables.VotingTimer?.Kill();
-                
-                // Set last map
-                GlobalVariables.LastMap = Server.MapName;
-                
-                if (GlobalVariables.NextMap != null)
-                {
-                    // Use the common map change utility method
-                    MapUtils.ChangeMap(GlobalVariables.NextMap);
-                }
-                else
-                {
-                    // If NextMap is null, use a random map from the cycle maps
-                    if (GlobalVariables.CycleMaps.Count > 0)
-                    {
-                        var randomMap = GlobalVariables.CycleMaps[new Random().Next(GlobalVariables.CycleMaps.Count)];
-                        Logger.LogInformation("NextMap was null, using random map: {MapName}", randomMap.MapValue);
-                        
-                        // Use the common map change utility method
-                        MapUtils.ChangeMap(randomMap);
-                    }
-                    else
-                    {
-                        Logger.LogWarning("No next map set and no cycle maps available. Map will not change.");
-                        Server.PrintToChatAll("No next map set and no cycle maps available. Map will not change.");
-                    }
-                }
+                PrepareForMapChange();
+                PerformMapChange();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error during map change");
+                
+                // Reset RTV flag in case of error
+                if (GlobalVariables.RtvTriggered)
+                {
+                    GlobalVariables.RtvTriggered = false;
+                }
             }
         }, TimerFlags.STOP_ON_MAPCHANGE);
 
         return HookResult.Continue;
+    }
+    
+    private void PrepareForMapChange()
+    {
+        // Save cooldowns before map change
+        Utils.CooldownManager.SaveCooldowns();
+        
+        // Clean up resources
+        GlobalVariables.Votes.Clear();
+        GlobalVariables.MapForVotes.Clear();
+        
+        // Kill any active timers
+        GlobalVariables.TimeLeftTimer?.Kill();
+        GlobalVariables.VotingTimer?.Kill();
+        
+        // Set last map
+        GlobalVariables.LastMap = Server.MapName;
+    }
+    
+    private void PerformMapChange()
+    {
+        // Check if RTV was triggered
+        if (Config?.RtvEnable == true && GlobalVariables.RtvTriggered)
+        {
+            HandleRtvTriggeredMapChange();
+        }
+        else if (GlobalVariables.NextMap != null)
+        {
+            // Normal map change at end of match
+            MapUtils.ChangeMap(GlobalVariables.NextMap);
+        }
+        else
+        {
+            HandleRandomMapChange();
+        }
+    }
+    
+    private void HandleRtvTriggeredMapChange()
+    {
+        Logger.LogInformation("RTV was triggered, changing map now");
+        
+        if (GlobalVariables.NextMap != null)
+        {
+            // Use the common map change utility method
+            MapUtils.ChangeMap(GlobalVariables.NextMap);
+        }
+        else
+        {
+            // If NextMap is null, select a random map
+            var randomMap = MapUtils.GetRandomNextMapByPlayers();
+            if (randomMap != null)
+            {
+                Logger.LogInformation("RTV triggered but NextMap was null, using random map: {MapName}", randomMap.MapValue);
+                MapUtils.ChangeMap(randomMap);
+            }
+            else
+            {
+                Logger.LogWarning("RTV triggered but no eligible maps found. Map will not change.");
+                Server.PrintToChatAll("No eligible maps found. Map will not change.");
+            }
+        }
+        
+        // Reset RTV flag
+        GlobalVariables.RtvTriggered = false;
+    }
+    
+    private void HandleRandomMapChange()
+    {
+        // If NextMap is null, use a random map from the cycle maps
+        if (GlobalVariables.CycleMaps.Count > 0)
+        {
+            var randomMap = GlobalVariables.CycleMaps[new Random().Next(GlobalVariables.CycleMaps.Count)];
+            Logger.LogInformation("NextMap was null, using random map: {MapName}", randomMap.MapValue);
+            
+            // Use the common map change utility method
+            MapUtils.ChangeMap(randomMap);
+        }
+        else
+        {
+            Logger.LogWarning("No next map set and no cycle maps available. Map will not change.");
+            Server.PrintToChatAll("No next map set and no cycle maps available. Map will not change.");
+        }
     }
 
     public HookResult RoundStartHandler(EventRoundStart @event, GameEventInfo info)
     {
         if (@event == null) return HookResult.Continue;
 
-        if (Config?.DependsOnTheRound == true)
+        if (Config?.PrioritizeRounds == true)
         {
             return MapUtils.CheckAndStartMapVoting();
         }
@@ -429,32 +473,22 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         // Check if RTV was triggered and we need to change map at round end
         if (Config?.RtvEnable == true && GlobalVariables.RtvTriggered && !Config.RtvChangeInstantly)
         {
-            try
+            // Instead of changing the map here, we'll set a flag to indicate that the map should be changed
+            // in the CsWinPanelMatchHandler, which is the proper event for map changes
+            Logger.LogInformation("RTV triggered, map will change at the end of the match");
+            
+            // Make sure we have a next map set
+            if (GlobalVariables.NextMap == null)
             {
-                if (GlobalVariables.NextMap != null)
-                {
-                    // Use the common map change utility method
-                    MapUtils.ChangeMap(GlobalVariables.NextMap);
-                }
-                else
-                {
-                    Logger.LogWarning("RTV was triggered but NextMap is null. Map will not change.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error during RTV map change in RoundEndHandler");
-            }
-            finally
-            {
-                // Always reset the flag, regardless of success or failure
-                GlobalVariables.RtvTriggered = false;
+                Logger.LogWarning("RTV was triggered but NextMap is null. Selecting a random map.");
+                GlobalVariables.NextMap = MapUtils.GetRandomNextMapByPlayers();
             }
             
+            // Don't reset RtvTriggered flag here, it will be reset in CsWinPanelMatchHandler
             return HookResult.Continue;
         }
 
-        if(Config?.DependsOnTheRound == true)
+        if(Config?.PrioritizeRounds == true)
         {
             return MapUtils.CheckAndPickMapsForVoting();
         }
@@ -477,6 +511,18 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
 
     public void OnMapStart(string mapName)
     {
+        ResetMapVariables();
+        LoadAndCreateMapConfigs();
+        
+        // Get workshop ID and update config after a delay to ensure the ID is available
+        AddTimer(1.0f, () => ProcessWorkshopMap(), TimerFlags.STOP_ON_MAPCHANGE);
+
+        UpdateMapCooldowns();
+        ResetTimersAndCollections();
+    }
+    
+    private void ResetMapVariables()
+    {
         if (Config?.RtvEnable == true)
         {
             GlobalVariables.MapStartTime = (float)GlobalVariables.Timers.Elapsed.TotalSeconds;
@@ -495,14 +541,17 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         // Reset nominations for new map
         NominateUtils.ResetNominations();
         Logger.LogInformation("Map nominations have been reset for new map");
-
+        
+        workShopID = "";
+    }
+    
+    private Map? LoadAndCreateMapConfigs()
+    {
         // Check if we need to reload map configs (in case they were modified externally)
         Utils.MapConfigManager.LoadMapConfigs();
 
-        // Define currentMap variable outside the if-else block
+        // Define currentMap variable
         Map? currentMap = null;
-
-        workShopID = "";
 
         // First create a temporary config if needed, which will be updated once we have the workshop ID
         if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
@@ -511,130 +560,164 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
             currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
             if (currentMap == null)
             {
-                // Create default config for this map (will be updated if it's a workshop map)
-                currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName, false, "");
-                
-                // Add to global maps list if not already there
-                if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
-                {
-                    GlobalVariables.Maps.Add(currentMap);
-                    if (currentMap.MapCycleEnabled)
-                    {
-                        GlobalVariables.CycleMaps.Add(currentMap);
-                    }
-                    Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
-                }
+                currentMap = CreateInitialMapConfig();
             }
         }
         else
         {
             Logger.LogWarning("Current map name is empty or <empty>. Skipping map config creation.");
         }
-
-        // Get workshop ID and update config after a delay to ensure the ID is available
-        AddTimer(1.0f, () =>
+        
+        return currentMap;
+    }
+    
+    private Map? CreateInitialMapConfig()
+    {
+        // Create default config for this map (will be updated if it's a workshop map)
+        Map? currentMap = Utils.MapConfigManager.GetOrCreateMapConfig(Server.MapName, false, "");
+        
+        // Add to global maps list if not already there
+        if (currentMap != null && !GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
         {
-            workShopID = GetAddonID();
-            if (!string.IsNullOrEmpty(workShopID))
+            GlobalVariables.Maps.Add(currentMap);
+            if (currentMap.MapCycleEnabled)
             {
-                string workshopUrl = $"https://steamcommunity.com/sharedfiles/filedetails/?id={workShopID}";
-                workShopURL = workshopUrl;
-                
-                // Update workshop mapping with the official map name
-                if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
-                {
-                    Utils.MapConfigManager.UpdateWorkshopMapping(workShopID, Server.MapName);
-                    
-                    // Merge any duplicate configs that might exist
-                    Utils.MapConfigManager.MergeWorkshopConfigs(workShopID, Server.MapName);
-                    
-                    Logger.LogInformation("Updated workshop mapping for ID {WorkshopId} to map name {MapName}", workShopID, Server.MapName);
-                    
-                    // Now that we have the workshop ID, update the map config if needed
-                    currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
-                    
-                    if (currentMap == null)
-                    {
-                        // Create a workshop map config
-                        currentMap = new Map(
-                            mapValue: Server.MapName,
-                            mapDisplay: Server.MapName,
-                            mapIsWorkshop: true,
-                            mapWorkshopId: workShopID,
-                            mapCycleEnabled: true,
-                            mapCanVote: true,
-                            mapMinPlayers: 0,
-                            mapMaxPlayers: 64,
-                            mapCycleStartTime: "",
-                            mapCycleEndTime: "",
-                            mapCooldownCycles: 10
-                        );
-                        
-                        // Save the config
-                        Utils.MapConfigManager.SaveMapConfig(currentMap);
-                        
-                        // Add to global maps list
-                        if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
-                        {
-                            GlobalVariables.Maps.Add(currentMap);
-                            if (currentMap.MapCycleEnabled)
-                            {
-                                GlobalVariables.CycleMaps.Add(currentMap);
-                            }
-                        }
-                        
-                        Logger.LogInformation("Created new workshop map config: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
-                    }
-                    else if (!currentMap.MapIsWorkshop || currentMap.MapWorkshopId != workShopID)
-                    {
-                        // If the map exists but is not marked as a workshop map or has a different workshop ID,
-                        // update the map to mark it as a workshop map with the correct ID
-                        Map updatedMap = new Map(
-                            mapValue: currentMap.MapValue,
-                            mapDisplay: currentMap.MapDisplay,
-                            mapIsWorkshop: true,
-                            mapWorkshopId: workShopID,
-                            mapCycleEnabled: currentMap.MapCycleEnabled,
-                            mapCanVote: currentMap.MapCanVote,
-                            mapMinPlayers: currentMap.MapMinPlayers,
-                            mapMaxPlayers: currentMap.MapMaxPlayers,
-                            mapCycleStartTime: currentMap.MapCycleStartTime,
-                            mapCycleEndTime: currentMap.MapCycleEndTime,
-                            mapCooldownCycles: currentMap.MapCooldownCycles
-                        );
-                        
-                        // Save the updated config
-                        Utils.MapConfigManager.SaveMapConfig(updatedMap);
-                        
-                        // Update in global maps list
-                        int index = GlobalVariables.Maps.FindIndex(m => m.MapValue == currentMap.MapValue);
-                        if (index >= 0)
-                        {
-                            GlobalVariables.Maps[index] = updatedMap;
-                            currentMap = updatedMap;
-                        }
-                        
-                        Logger.LogInformation("Updated existing map to mark as workshop map: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
-                    }
-                }
+                GlobalVariables.CycleMaps.Add(currentMap);
             }
-        }, TimerFlags.STOP_ON_MAPCHANGE);
-
+            Logger.LogInformation("Added new map to maps list: {MapName}", Server.MapName);
+        }
+        
+        return currentMap;
+    }
+    
+    private void ProcessWorkshopMap()
+    {
+        workShopID = GetAddonID();
+        if (string.IsNullOrEmpty(workShopID))
+        {
+            return;
+        }
+        
+        string workshopUrl = $"https://steamcommunity.com/sharedfiles/filedetails/?id={workShopID}";
+        workShopURL = workshopUrl;
+        
+        // Update workshop mapping with the official map name
+        if (!string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
+        {
+            Utils.MapConfigManager.UpdateWorkshopMapping(workShopID, Server.MapName);
+            
+            // Merge any duplicate configs that might exist
+            Utils.MapConfigManager.MergeWorkshopConfigs(workShopID, Server.MapName);
+            
+            Logger.LogInformation("Updated workshop mapping for ID {WorkshopId} to map name {MapName}", workShopID, Server.MapName);
+            
+            UpdateMapConfigWithWorkshopInfo();
+        }
+    }
+    
+    private void UpdateMapConfigWithWorkshopInfo()
+    {
+        // Now that we have the workshop ID, update the map config if needed
+        var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+        
+        if (currentMap == null)
+        {
+            CreateNewWorkshopMapConfig();
+        }
+        else if (!currentMap.MapIsWorkshop || currentMap.MapWorkshopId != workShopID)
+        {
+            UpdateExistingMapWithWorkshopInfo(currentMap);
+        }
+    }
+    
+    private void CreateNewWorkshopMapConfig()
+    {
+        // Create a workshop map config
+        Map currentMap = new Map(
+            mapValue: Server.MapName,
+            mapDisplay: Server.MapName,
+            mapIsWorkshop: true,
+            mapWorkshopId: workShopID,
+            mapCycleEnabled: true,
+            mapCanVote: true,
+            mapMinPlayers: 0,
+            mapMaxPlayers: 64,
+            mapCycleStartTime: "",
+            mapCycleEndTime: "",
+            mapCooldownCycles: 10
+        );
+        
+        // Save the config
+        Utils.MapConfigManager.SaveMapConfig(currentMap);
+        
+        // Add to global maps list
+        if (!GlobalVariables.Maps.Any(m => m.MapValue == currentMap.MapValue))
+        {
+            GlobalVariables.Maps.Add(currentMap);
+            if (currentMap.MapCycleEnabled)
+            {
+                GlobalVariables.CycleMaps.Add(currentMap);
+            }
+        }
+        
+        Logger.LogInformation("Created new workshop map config: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
+    }
+    
+    private void UpdateExistingMapWithWorkshopInfo(Map currentMap)
+    {
+        // If the map exists but is not marked as a workshop map or has a different workshop ID,
+        // update the map to mark it as a workshop map with the correct ID
+        Map updatedMap = new Map(
+            mapValue: currentMap.MapValue,
+            mapDisplay: currentMap.MapDisplay,
+            mapIsWorkshop: true,
+            mapWorkshopId: workShopID,
+            mapCycleEnabled: currentMap.MapCycleEnabled,
+            mapCanVote: currentMap.MapCanVote,
+            mapMinPlayers: currentMap.MapMinPlayers,
+            mapMaxPlayers: currentMap.MapMaxPlayers,
+            mapCycleStartTime: currentMap.MapCycleStartTime,
+            mapCycleEndTime: currentMap.MapCycleEndTime,
+            mapCooldownCycles: currentMap.MapCooldownCycles
+        );
+        
+        // Save the updated config
+        Utils.MapConfigManager.SaveMapConfig(updatedMap);
+        
+        // Update in global maps list
+        int index = GlobalVariables.Maps.FindIndex(m => m.MapValue == currentMap.MapValue);
+        if (index >= 0)
+        {
+            GlobalVariables.Maps[index] = updatedMap;
+        }
+        
+        Logger.LogInformation("Updated existing map to mark as workshop map: {MapName} with ID {WorkshopId}", Server.MapName, workShopID);
+    }
+    
+    private void UpdateMapCooldowns()
+    {
         // Decrease cooldown for all maps - this ensures we only decrease cooldowns when a map is actually loaded
         Utils.MapUtils.DecreaseCooldownForAllMaps();
         
         // Reset cooldown for the current map - this ensures we only reset cooldown when a map is actually played
-        if (currentMap != null && Config?.EnableMapCooldown == true &&
+        if (Config?.EnableMapCooldown == true &&
             !string.IsNullOrWhiteSpace(Server.MapName) && Server.MapName != "<empty>" && Server.MapName != "\u003Cempty\u003E")
         {
-            Utils.MapUtils.ResetMapCooldown(currentMap);
-            Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);
+            var currentMap = GlobalVariables.Maps.FirstOrDefault(m => m.MapValue == Server.MapName);
+            if (currentMap != null)
+            {
+                Utils.MapUtils.ResetMapCooldown(currentMap);
+                Logger.LogInformation("Reset cooldown for current map: {MapName}", Server.MapName);
+            }
         }
 
         // Save cooldowns after map changes and cooldown updates
         Utils.CooldownManager.SaveCooldowns();
         Logger.LogInformation("Saved map cooldowns to file on map start.");
-
+    }
+    
+    private void ResetTimersAndCollections()
+    {
         if (Config?.VoteMapOnFreezeTime == true)
         {
             GlobalVariables.FreezeTime = ConVar.Find("mp_freezetime")?.GetPrimitiveValue<int>() ?? 5;
@@ -677,66 +760,6 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         GlobalVariables.VotingTimer = null;
     }
 
-    //public void OnTick()
-    //{
-    //    if (GlobalVariables.VoteStarted && Config?.VoteMapEnable == true)
-    //    {
-    //        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p));
-
-    //        foreach (var player in players)
-    //        {
-    //            if (!MenuUtils.PlayersMenu.ContainsKey(player.SteamID.ToString())) continue;
-    //            MenuUtils.PlayersMenu[player.SteamID.ToString()].MenuOpened = true;
-
-    //            if (Config?.EnablePlayerFreezeInMenu == true)
-    //            {
-    //                if (player.PlayerPawn.Value != null && player.PlayerPawn.Value.IsValid)
-    //                {
-    //                    player.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_NONE;
-    //                    Schema.SetSchemaValue(player.PlayerPawn.Value.Handle, "CBaseEntity", "m_nActualMoveType", 0);
-    //                    Utilities.SetStateChanged(player.PlayerPawn.Value, "CBaseEntity", "m_MoveType");
-    //                }
-    //            }
-
-    //            MenuUtils.CreateAndOpenHtmlVoteMenu(player);
-    //        }
-    //    }
-    //    else if(!GlobalVariables.VoteStarted || Config?.VoteMapEnable == false)
-    //    {
-    //        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p));
-
-    //        foreach (var player in players)
-    //        {
-    //            if (!MenuUtils.PlayersMenu.ContainsKey(player.SteamID.ToString())) continue;
-    //            if (MenuUtils.PlayersMenu[player.SteamID.ToString()].MenuOpened)
-    //            {
-    //                if (Config?.EnablePlayerFreezeInMenu == true)
-    //                {
-    //                    if (player.PlayerPawn.Value != null && player.PlayerPawn.Value.IsValid)
-    //                    {
-    //                        player.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_NONE;
-    //                        Schema.SetSchemaValue(player.PlayerPawn.Value.Handle, "CBaseEntity", "m_nActualMoveType", 0);
-    //                        Utilities.SetStateChanged(player.PlayerPawn.Value, "CBaseEntity", "m_MoveType");
-    //                    }
-    //                }
-
-    //                MenuUtils.CreateAndOpenHtmlMapsMenu(player);
-    //            }
-    //            else
-    //            {
-    //                if(Config?.EnablePlayerFreezeInMenu == true)
-    //                {
-    //                    if (player.PlayerPawn.Value != null && player.PlayerPawn.Value.IsValid)
-    //                    {
-    //                        player.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_WALK;
-    //                        Schema.SetSchemaValue(player.PlayerPawn.Value.Handle, "CBaseEntity", "m_nActualMoveType", 2);
-    //                        Utilities.SetStateChanged(player.PlayerPawn.Value, "CBaseEntity", "m_MoveType");
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
     // Command registration using attributes
 
     [ConsoleCommand("css_setnextmap", "Set a next map")]
@@ -891,7 +914,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
             // If a vote has completed through normal time-based voting, show the next map but don't imply immediate change
             player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.vote.completed").Replace("{MAP_NAME}", GlobalVariables.NextMap?.MapValue ?? ""));
         }
-        else if(Config?.DependsOnTheRound == true && gameRules != null)
+        else if(Config?.PrioritizeRounds == true && gameRules != null)
         {
             var maxRounds = ConVar.Find("mp_maxrounds")?.GetPrimitiveValue<int>() ?? 0;
             var roundLeft = maxRounds - gameRules.TotalRoundsPlayed;
@@ -905,7 +928,7 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
                 player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.expired"));
             }
         }
-        else if(Config?.DependsOnTheRound == true && gameRules == null)
+        else if(Config?.PrioritizeRounds == true && gameRules == null)
         {
             player.PrintToChat(Localizer.ForPlayer(player, "timeleft.get.command.unavailable"));
         }
@@ -945,5 +968,35 @@ public class Mappen : BasePlugin, IPluginConfig<Config.Config>
         {
             player.PrintToChat(Localizer.ForPlayer(player, "lastmap.get.command").Replace("{MAP_NAME}", GlobalVariables.LastMap));
         }
+    }
+    
+    [ConsoleCommand("css_force_rtv", "Force Rock the Vote to change the map (admin only)")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [RequiresPermissions("@css/changemap")]
+    public void OnForceRtvCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (!PlayerUtils.IsValidPlayer(player)) return;
+        
+        if (Config?.RtvEnable != true)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "rtv.force.disabled"));
+            return;
+        }
+        
+        if (GlobalVariables.IsVotingInProgress || GlobalVariables.VoteStarted)
+        {
+            player.PrintToChat(Localizer.ForPlayer(player, "rtv.vote.in.progress"));
+            return;
+        }
+        
+        // Notify all players that an admin has forced RTV
+        var players = Utilities.GetPlayers().Where(p => PlayerUtils.IsValidPlayer(p));
+        foreach (var p in players)
+        {
+            p.PrintToChat(Localizer.ForPlayer(p, "rtv.force.success").Replace("{ADMIN_NAME}", player.PlayerName));
+        }
+        
+        // Start RTV process
+        RtvUtils.StartRtv();
     }
 }
